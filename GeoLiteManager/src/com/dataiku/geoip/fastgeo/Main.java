@@ -39,17 +39,21 @@ public class Main {
 			public void progress(int processed, int total) {
 				if (processed % 150000 == 0) {
 					System.out.println("Building FastGeoIP2... " + 100
-							* processed / total + "%   ("+processed+" IP ranges processed)");
+							* processed / total + "%   (" + processed
+							+ " IP ranges processed)");
 				}
 			}
 		});
 
-		dbBuilder.close();
 		inMemoryDB.saveToFile(outputFGDB);
 		System.out.println("FastGeoIP2 database built successfully !");
+		System.out.println("Database size (on disk) : " + outputFGDB.length()
+				/ 1024 + "KB");
 
 	}
 
+	// Run a perf benchmark FastGeoIP2 VS MaxMind GeoIP2 API
+	// Check that they both produces the same output!
 	static public void bench(String mmdbFilename, String fgdbFilename)
 			throws IOException {
 
@@ -96,9 +100,10 @@ public class Main {
 					hashFGDB = 31 * hashFGDB + res.getCountry().hashCode();
 					hashFGDB = 31 * hashFGDB + res.getCountryCode().hashCode();
 					hashFGDB = 31 * hashFGDB + res.getContinent().hashCode();
-					hashFGDB = 31 * hashFGDB + res.getContinentCode().hashCode();
+					hashFGDB = 31 * hashFGDB
+							+ res.getContinentCode().hashCode();
 					hashFGDB = 31 * hashFGDB + res.getPostalCode().hashCode();
-					
+
 					for (String region : res.getSubdivisions())
 						hashFGDB = 31 * hashFGDB + region.hashCode();
 				}
@@ -146,17 +151,13 @@ public class Main {
 							* hashMMDB
 							+ n.path("continent").path("names").path("en")
 									.asText().hashCode();
-					
+
 					hashMMDB = 31
 							* hashMMDB
-							+ n.path("continent").path("iso_code")
-									.asText().hashCode();
-					hashMMDB = 31
-							* hashMMDB
-							+ n.path("postal").path("code")
-									.asText().hashCode();
-					
-					
+							+ n.path("continent").path("iso_code").asText()
+									.hashCode();
+					hashMMDB = 31 * hashMMDB
+							+ n.path("postal").path("code").asText().hashCode();
 
 					JsonNode subdivisions = n.path("subdivisions");
 					for (int i = 0; i < subdivisions.size(); i++) {

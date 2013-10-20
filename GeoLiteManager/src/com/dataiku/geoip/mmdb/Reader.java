@@ -103,6 +103,9 @@ public final class Reader implements Closeable {
 
     int previousRecord = -1;
 
+    
+    // Get the splits between IPv4 ranges 
+    // Warning : this method doesn't exist in the official MaxMind DB reader
     public List<InetAddress> getRanges() {
 
         try {
@@ -121,7 +124,8 @@ public final class Reader implements Closeable {
         }
 
     }
-
+    // Recursive helper for getRanges()
+    // Warning : this method doesn't exist in the official MaxMind DB reader
     private void visitorHelper(int record, int bit, int depth, int ip,
             List<InetAddress> ips) throws InvalidDatabaseException,
             UnknownHostException {
@@ -143,7 +147,10 @@ public final class Reader implements Closeable {
         }
 
     }
+    
 
+    // Dump the database to a text file
+    // Warning : this method doesn't exist in the official MaxMind DB reader
     public void dump(File output) throws FileNotFoundException {
 
         System.out.println("Dumping GeoIP database...");

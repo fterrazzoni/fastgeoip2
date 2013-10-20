@@ -5,6 +5,9 @@ import java.util.HashMap;
 
 public class WritableArray {
 
+	// Add a string
+	// Notice: the string is inserted immediately 
+	// (and it'll be stored forever even if the current array is never added!)
 	final public WritableArray addString(String string) {
 
 		if (string == null) {
@@ -26,7 +29,10 @@ public class WritableArray {
 
 		return this;
 	}
-
+	
+	// Add an array
+	// Notice: the array is inserted immediately 
+	// (and it'll be stored forever even if the current array is never added!)
 	final public WritableArray addArray(WritableArray array) {
 
 		if (array == null) {
@@ -47,7 +53,8 @@ public class WritableArray {
 
 		return this;
 	}
-
+	
+	// Add an integer
 	final public WritableArray addInteger(int value) {
 		storage.add(value);
 		return this;
@@ -64,5 +71,4 @@ public class WritableArray {
 	protected ArrayList<Integer> meta;
 	protected HashMap<Object, Integer> map;
 	protected ArrayList<Integer> storage = new ArrayList<Integer>();
-
 }

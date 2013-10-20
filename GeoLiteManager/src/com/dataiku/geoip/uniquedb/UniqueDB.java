@@ -5,24 +5,20 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 
-// UniqueDB : In-memory hierarchical string datastore optimized for highly redundant data
-// - Supported types are 'integer', 'string' and 'array' (the root node is an array)
+// UniqueDB : In-memory hierarchical string datastore optimized for highly redundant data and fast access
+// - Supported types are 'integer', 'string' and 'array' (the root is an array)
 // - Arrays handle mixed element types
-// - No runtime type checking / bound checking
-// - Redundant subtrees are stored once
-// - Very simple memory layout (1 UniqueDB = 1 array + 1 string)
+// - No runtime type checking / bound checking 
+// - Redundant subtrees are stored once (=> the UniqueDB is actually a DAG)
+// - Very simple memory layout from a JVM POV (1 UniqueDB = 1 array + 1 string)
 public final class UniqueDB extends ReadableArray {
 
-	public static final int VERSION_ID = 7429138;
-	
-	public UniqueDB(String data, int[] meta) {
-		super(meta, data, meta[0]);
-	}
-
+	// Get approximated size of the UniqueDB in memory (optimistic!)
 	public int getApproxSizeInBytes() {
-		return 4*3+meta.length*4 + data.length()*2;
+		return meta.length*4 + data.length()*2;
 	}
 
+	// Write the UniqueDB to a DataOutputStream
 	public void writeToStream(DataOutputStream dos) throws IOException {
 		
 		byte dataBytes[] = data.getBytes("UTF-8");
@@ -37,11 +33,7 @@ public final class UniqueDB extends ReadableArray {
 		
 	}
 
-	static private void checkVersion(DataInputStream dis) throws IOException {
-		if(dis.readInt() != VERSION_ID)
-			throw new IOException("Cannot load database (invalid version or corrupted file)");
-	}
-	
+	// Write the UniqueDB to a DataOutputStream
 	static public UniqueDB loadFromStream(DataInputStream dis)
 			throws IOException {
 		
@@ -58,5 +50,16 @@ public final class UniqueDB extends ReadableArray {
 			meta[i] = dis.readInt();
 		checkVersion(dis);
 		return new UniqueDB(data, meta);
+	}
+	
+	static private void checkVersion(DataInputStream dis) throws IOException {
+		if(dis.readInt() != VERSION_ID)
+			throw new IOException("Cannot load database (invalid version or corrupted file)");
+	}
+	
+	public static final int VERSION_ID = 7429138;
+	
+	public UniqueDB(String data, int[] meta) {
+		super(meta, data, meta[0]);
 	}
 }

@@ -27,9 +27,63 @@ import com.dataiku.geoip.uniquedb.UniqueDB;
 
 public class FastGeoIP2 {
 
-	private UniqueDB db;
-	private ReadableArray dataTable;
-	private ReadableArray ipTable;
+	// Instantiate a new FastGeoIP2 from a file
+	public FastGeoIP2(File file) throws IOException {
+		FileInputStream fis = new FileInputStream(file);
+		BufferedInputStream bis = new BufferedInputStream(fis);
+		DataInputStream dis = new DataInputStream(bis);
+
+		try {
+			this.db = UniqueDB.loadFromStream(dis);
+			this.dataTable = db.getArray(0);
+			this.ipTable = db.getArray(1);
+		} finally {
+			dis.close();
+		}
+	}
+	
+	// Construct a FastGeoIP2 using an already loaded UniqueDB
+	public FastGeoIP2(UniqueDB db) {
+		this.db = db;
+		this.dataTable = db.getArray(0);
+		this.ipTable = db.getArray(1);
+	}
+
+	// Find an IPv4 address in the database
+	// Return null if the IP has not been found, or a Result object
+	public Result find(InetAddress addr) {
+
+		byte[] bytes = addr.getAddress();
+		
+		if (bytes.length != 4)
+			return null;
+		
+		long ip = ((bytes[0] & 0xFFL) << 24)
+				| ((bytes[1] & 0xFFL) << 16) | ((bytes[2] & 0xFFL) << 8)
+				| (bytes[3]) & 0xFFL;
+		
+		int index = findIndex(ip);
+
+		ReadableArray data = dataTable.getArray(index);
+
+		if (data != null)
+			return new Result(data);
+
+		return null;
+	}
+	
+	// Save the FastGeoIP2 database to a file
+	public void saveToFile(File file) throws IOException {
+
+		FileOutputStream fos = new FileOutputStream(file);
+		BufferedOutputStream bos = new BufferedOutputStream(fos);
+		DataOutputStream dos = new DataOutputStream(bos);
+		try {
+			db.writeToStream(dos);
+		} finally {
+			dos.close();
+		}
+	}
 
 	static public class Result {
 
@@ -50,7 +104,7 @@ public class FastGeoIP2 {
 		public String getCountryCode() {
 			return root.getArray(4).getArray(1).getString(1);
 		}
-		
+
 		public String getTimezone() {
 			return root.getArray(4).getArray(1).getString(2);
 		}
@@ -58,16 +112,14 @@ public class FastGeoIP2 {
 		public String getCountry() {
 			return root.getArray(4).getArray(1).getString(0);
 		}
-		
 
 		public String getContinent() {
 			return root.getArray(4).getArray(1).getArray(3).getString(0);
 		}
-		
+
 		public String getContinentCode() {
 			return root.getArray(4).getArray(1).getArray(3).getString(1);
 		}
-		
 
 		public String getLatitude() {
 			return root.getString(0);
@@ -87,38 +139,8 @@ public class FastGeoIP2 {
 		}
 
 	}
+	
 
-	public FastGeoIP2(UniqueDB db) {
-		this.db = db;
-		this.dataTable = db.getArray(0);
-		this.ipTable = db.getArray(1);
-	}
-
-	public FastGeoIP2(File file) throws IOException {
-		FileInputStream fis = new FileInputStream(file);
-		BufferedInputStream bis = new BufferedInputStream(fis);
-		DataInputStream dis = new DataInputStream(bis);
-
-		try {
-			this.db = UniqueDB.loadFromStream(dis);
-			this.dataTable = db.getArray(0);
-			this.ipTable = db.getArray(1);
-		} finally {
-			dis.close();
-		}
-	}
-
-	public Result find(InetAddress addr) {
-
-		int idx = findIndex(inetAddressToLong(addr));
-
-		ReadableArray data = dataTable.getArray(idx);
-
-		if (data != null)
-			return new Result(data);
-
-		return null;
-	}
 
 	private int findIndex(long queryIP) {
 
@@ -151,25 +173,10 @@ public class FastGeoIP2 {
 		return minIdx;
 	}
 
-	static public long inetAddressToLong(InetAddress addr) {
+	
 
-		byte[] bytes = addr.getAddress();
-
-		return ((bytes[0] & 0xFFL) << 24) | ((bytes[1] & 0xFFL) << 16)
-				| ((bytes[2] & 0xFFL) << 8) | (bytes[3]) & 0xFFL;
-
-	}
-
-	public void saveToFile(File file) throws IOException {
-
-		FileOutputStream fos = new FileOutputStream(file);
-		BufferedOutputStream bos = new BufferedOutputStream(fos);
-		DataOutputStream dos = new DataOutputStream(bos);
-		try {
-			db.writeToStream(dos);
-		} finally {
-			dos.close();
-		}
-	}
+	private UniqueDB db;
+	private ReadableArray dataTable;
+	private ReadableArray ipTable;
 
 }

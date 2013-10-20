@@ -1,10 +1,8 @@
 package com.dataiku.geoip.fastgeo;
 
-import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.util.ArrayList;
 import java.util.List;
 
 import com.dataiku.geoip.mmdb.Reader;
@@ -13,24 +11,69 @@ import com.dataiku.geoip.uniquedb.UniqueDBBuilder;
 import com.dataiku.geoip.uniquedb.WritableArray;
 import com.fasterxml.jackson.databind.JsonNode;
 
-// Construct a FastGeoIP2 database from the GeoLite2 MMDB file
-public class FastGeoIP2Builder implements Closeable {
+// Convert a GeoLite2 MMDB file to a FastGeoIP2 database
+public class FastGeoIP2Builder {
 
-	ArrayList<Integer> ipAddresses = new ArrayList<Integer>();
-	UniqueDBBuilder dbBuilder = new UniqueDBBuilder();
-	WritableArray dataTable = dbBuilder.newArray();
-	WritableArray ipTable = dbBuilder.newArray();
-
-	private Reader geoliteDatabase;
-
-	FastGeoIP2Builder(File mmdbFile) throws IOException {
-		geoliteDatabase = new Reader(mmdbFile);
+	// Progress listener (the conversion process takes some time!)
+	static public interface Listener {
+		public void progress(int processed, int total);
 	}
 
+	
+	// Construct the builder with a GeoLite2 database
+	FastGeoIP2Builder(File mmdbFile) {
+		geoliteFile = mmdbFile;
+	}
+
+	// Start the conversion procedure
+	FastGeoIP2 build(Listener listener) throws IOException {
+
+		dbBuilder = new UniqueDBBuilder();
+		dataTable = dbBuilder.newArray();
+		ipTable = dbBuilder.newArray();
+		Reader geoliteDatabase = new Reader(geoliteFile);
+
+		try {
+			List<InetAddress> ranges = geoliteDatabase.getRanges();
+
+			for (int i = 0; i < ranges.size(); i++) {
+				InetAddress addr = ranges.get(i);
+				JsonNode node = geoliteDatabase.get(addr);
+				insert(addr, node);
+
+				if (listener != null) {
+					listener.progress(1 + i, ranges.size());
+				}
+
+			}
+
+			dbBuilder.addArray(dataTable);
+			dbBuilder.addArray(ipTable);
+
+			UniqueDB udb = dbBuilder.constructDatabase();
+			return new FastGeoIP2(udb);
+			
+		} finally {
+			
+			geoliteDatabase.close();
+			
+		}
+
+	}
+
+	// Insert an IP record using the data contained in a JsonNode
 	private void insert(InetAddress address, JsonNode node) {
 
+		byte[] bytes = address.getAddress();
+
+		if (bytes.length != 4) {
+			throw new IllegalArgumentException("FastGeoIP2 supports IPv4 only");
+		}
+
+		int ipAddress = (int) (((bytes[0] & 0xFFL) << 24)
+				| ((bytes[1] & 0xFFL) << 16) | ((bytes[2] & 0xFFL) << 8) | (bytes[3]) & 0xFFL);
+
 		WritableArray ipDetails = null;
-		int ipAddress = (int) FastGeoIP2.inetAddressToLong(address);
 
 		if (node != null) {
 
@@ -89,41 +132,10 @@ public class FastGeoIP2Builder implements Closeable {
 
 	}
 
-	static public interface Listener {
-		public void progress(int processed, int total);
-	}
+	private UniqueDBBuilder dbBuilder;
+	private WritableArray dataTable;
+	private WritableArray ipTable;
+	private File geoliteFile;
 
-	FastGeoIP2 build(Listener listener) throws IOException {
-
-		List<InetAddress> ranges = geoliteDatabase.getRanges();
-
-		for (int i = 0; i < ranges.size(); i++) {
-			InetAddress addr = ranges.get(i);
-			JsonNode node = geoliteDatabase.get(addr);
-			insert(addr, node);
-
-			if (listener != null) {
-				listener.progress(1 + i, ranges.size());
-			}
-
-		}
-
-		dbBuilder.addArray(dataTable);
-		dbBuilder.addArray(ipTable);
-
-		UniqueDB udb = dbBuilder.constructDatabase();
-		return new FastGeoIP2(udb);
-
-	}
-
-	@Override
-	public void close() throws IOException {
-		if (geoliteDatabase != null) {
-			geoliteDatabase.close();
-			geoliteDatabase = null;
-			dbBuilder = null;
-			ipAddresses = null;
-		}
-	}
 
 }

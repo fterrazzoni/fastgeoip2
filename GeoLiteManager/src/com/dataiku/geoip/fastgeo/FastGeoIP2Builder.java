@@ -6,11 +6,10 @@ import java.net.InetAddress;
 import java.util.List;
 
 import com.dataiku.geoip.mmdb.Reader;
+import com.dataiku.geoip.uniquedb.NodeBuilder;
 import com.dataiku.geoip.uniquedb.UniqueDB;
 import com.dataiku.geoip.uniquedb.UniqueDBBuilder;
-import com.dataiku.geoip.uniquedb.NodeBuilder;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.sun.xml.internal.bind.v2.runtime.unmarshaller.XsiNilLoader.Array;
 
 // Convert a GeoLite2 MMDB file to a FastGeoIP2 database
 public class FastGeoIP2Builder {
@@ -19,8 +18,7 @@ public class FastGeoIP2Builder {
     static public interface Listener {
         public void progress(int processed, int total);
     }
-    private NodeBuilder schemaTable;
-
+  
     // Construct the builder with a GeoLite2 database
     FastGeoIP2Builder(File mmdbFile) {
         geoliteFile = mmdbFile;
@@ -30,9 +28,8 @@ public class FastGeoIP2Builder {
     FastGeoIP2 build(Listener listener) throws IOException {
 
         db = new UniqueDBBuilder();
-        dataTable = db.array();
-        ipTable = db.array();
-        schemaTable = db.array();
+        dataTable = db.newArray();
+        ipTable = db.newArray();
         
         Reader geoliteDatabase = new Reader(geoliteFile);
         
@@ -49,9 +46,9 @@ public class FastGeoIP2Builder {
                 }
             }
 
+            db.add(FastGeoIP2.VERSION_ID);
             db.add(dataTable);
             db.add(ipTable);
-            
 
             UniqueDB udb = db.constructDatabase();
             return new FastGeoIP2(udb);
@@ -93,7 +90,7 @@ public class FastGeoIP2Builder {
                     .asText();
             String timezone = node.path("location").path("time_zone").asText();
 
-            NodeBuilder regions = db.array();
+            NodeBuilder regions = db.newArray();
 
             JsonNode subdivisions = node.path("subdivisions");
 
@@ -103,31 +100,31 @@ public class FastGeoIP2Builder {
                         .asText();
                 String code = subdivisions.get(i).path("iso_code").asText();
 
-                regions.add(db.struct().add(name)
-                        .add(code));
+                regions.add(db.newStruct().add(name).add(code));
             }
 
             // If you modify this tree, don't forget to update the getters in
             // FastGeoIP2 !
-            
-            
-            ipDetails = db
-                    .struct()
+            ipDetails = db.newStruct()
+                    
                     .add(latitude)
                     .add(longitude)
                     .add(postalcode)
                     .add(city)
                     .add(
-                            db
-                                    .struct()
-                                    .add(regions)
-                                    .add(country)
-                                    .add(countrycode)
-                                    .add(timezone)
-                                    .add(
-                                            db.struct()
-                                            .add(continent)
-                                                    .add(continentcode)));
+                    	db.newStruct()
+                    	
+                        .add(regions)
+                        .add(country)
+                        .add(countrycode)
+                        .add(timezone)
+                        
+                        .add(db.newStruct()
+                            .add(continent)
+                            .add(continentcode)
+                         )
+                         
+                     );
             
         }
         

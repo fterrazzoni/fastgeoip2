@@ -54,10 +54,10 @@ public final class UniqueDB extends Node {
 	
 	static private void checkVersion(DataInputStream dis) throws IOException {
 		if(dis.readInt() != VERSION_ID)
-			throw new IOException("Cannot load database (invalid version or corrupted file)");
+			throw new IOException("Cannot load UniqueDB (incompatible version or corrupted)");
 	}
 	
-	public static final int VERSION_ID = 7429138;
+	static final int VERSION_ID = 7429138;
 	
 	public UniqueDB(String data, int[] meta) {
 		super(meta, data, meta[0]);

@@ -8,7 +8,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,51 +26,79 @@ import com.dataiku.geoip.uniquedb.UniqueDB;
 
 public class FastGeoIP2 {
 
+	
+	
 	// Instantiate a new FastGeoIP2 from a file
 	public FastGeoIP2(File file) throws IOException {
+		
 		FileInputStream fis = new FileInputStream(file);
 		BufferedInputStream bis = new BufferedInputStream(fis);
 		DataInputStream dis = new DataInputStream(bis);
 
+		UniqueDB db = null;
+		
 		try {
-			this.db = UniqueDB.loadFromStream(dis);
-			this.dataTable = db.getNode(0);
-			this.ipTable = db.getNode(1);
+			db = UniqueDB.loadFromStream(dis);
+			
 		} finally {
 			dis.close();
 		}
-	}
-	
-	// Construct a FastGeoIP2 using an already loaded UniqueDB
-	public FastGeoIP2(UniqueDB db) {
-		this.db = db;
-		this.dataTable = db.getNode(0);
-		this.ipTable = db.getNode(1);
+		
+		initialize(db);
+		
 	}
 
 	// Find an IPv4 address in the database
 	// Return null if the IP has not been found, or a Result object
-	public Result find(InetAddress addr) {
+	public Result find(String addr) {
 
-		byte[] bytes = addr.getAddress();
-		
-		if (bytes.length != 4)
+		if (addr == null || addr.isEmpty()) {
 			return null;
-		
-		long ip = ((bytes[0] & 0xFFL) << 24)
-				| ((bytes[1] & 0xFFL) << 16) | ((bytes[2] & 0xFFL) << 8)
-				| (bytes[3]) & 0xFFL;
-		
+		}
+
+		long ip = 0;
+		long blockVal = 0;
+		int blockNum = 0;
+
+		for (int i = 0; i < addr.length(); i++) {
+			
+			char c = addr.charAt(i);
+
+			if (c >= '0' && c <= '9') {
+				blockVal = blockVal * 10 + c - '0';
+			}
+
+			if (c == '.' || i == addr.length() - 1) {
+
+				if (blockVal < 0 || blockVal > 255) {
+					return null;
+				}
+
+				ip += blockVal << (24 - (8 * blockNum));
+				blockVal = 0;
+				blockNum++;
+			}
+
+			if (blockNum > 4 || (c != '.' && (c < '0' || c > '9'))) {
+				return null;
+			}
+		}
+
+		if (blockNum != 4) {
+			return null;
+		}
+
 		int index = findIndex(ip);
 
 		Node data = dataTable.getNode(index);
 
-		if (data != null)
+		if (data != null) {
 			return new Result(data);
+		}
 
 		return null;
 	}
-	
+
 	// Save the FastGeoIP2 database to a file
 	public void saveToFile(File file) throws IOException {
 
@@ -87,69 +114,66 @@ public class FastGeoIP2 {
 
 	static public class Result {
 
-		Node root;
+		private Node root;
 
-		private Result(Node root) {
+		Result(Node root) {
 			this.root = root;
 		}
 
-		public String getCity() {
+		final public String getCity() {
 			return root.getString(3);
 		}
 
-		public String getPostalCode() {
+		final public String getPostalCode() {
 			return root.getString(2);
 		}
 
-		public String getCountryCode() {
+		final public String getCountryCode() {
 			return root.getNode(4).getString(2);
 		}
 
-		public String getTimezone() {
+		final public String getTimezone() {
 			return root.getNode(4).getString(3);
 		}
 
-		public String getCountry() {
+		final public String getCountry() {
 			return root.getNode(4).getString(1);
 		}
 
-		public String getContinent() {
+		final public String getContinent() {
 			return root.getNode(4).getNode(4).getString(0);
 		}
 
-		public String getContinentCode() {
+		final public String getContinentCode() {
 			return root.getNode(4).getNode(4).getString(1);
 		}
 
-		public String getLatitude() {
+		final public String getLatitude() {
 			return root.getString(0);
 		}
 
-		public String getLongitude() {
+		final public String getLongitude() {
 			return root.getString(1);
-		} 
-
-		static public class Subdivision {
-		    public String name;
-		    public String code;
 		}
-		
-		public List<Subdivision> getSubdivisions() {
-            Node arr = root.getNode(4).getNode(0);
-            ArrayList<Subdivision> list = new ArrayList<Subdivision>();
-            for (int i = 0; i < arr.size(); i++) {
-                Subdivision sub = new Subdivision();
-                sub.name = arr.getNode(i).getString(0);
-                sub.code = arr.getNode(i).getString(1);
-                list.add(sub);
-            }
-            return list;
-        }
-        
+
+		final static public class Subdivision {
+			public String name;
+			public String code;
+		}
+
+		final public List<Subdivision> getSubdivisions() {
+			Node arr = root.getNode(4).getNode(0);
+			ArrayList<Subdivision> list = new ArrayList<Subdivision>();
+			for (int i = 0; i < arr.size(); i++) {
+				Subdivision sub = new Subdivision();
+				sub.name = arr.getNode(i).getString(0);
+				sub.code = arr.getNode(i).getString(1);
+				list.add(sub);
+			}
+			return list;
+		}
 
 	}
-	
-
 
 	private int findIndex(long queryIP) {
 
@@ -173,19 +197,38 @@ public class FastGeoIP2 {
 		}
 
 		long foundIP = ipTable.getInteger(minIdx) & 0xFFFFFFFFL;
-
+		
 		if (foundIP > queryIP) {
-			minIdx--;
+			minIdx = Math.max(minIdx - 1, 0);
 			foundIP = ipTable.getInteger(minIdx) & 0xFFFFFFFFL;
 		}
 
 		return minIdx;
 	}
 
+
+	// Construct a FastGeoIP2 using an already loaded UniqueDB
+	FastGeoIP2(UniqueDB db) throws IOException {
+		initialize(db);
+	}
 	
+	private void initialize(UniqueDB db) throws IOException {
+		this.db = db;
+		this.dataTable = db.getNode(1);
+		this.ipTable = db.getNode(2);
+		checkVersion();
+	}
+	
+	private void checkVersion() throws IOException {
+		if(db.getInteger(0) != VERSION_ID) {
+			throw new IOException("Cannot load FastGeoIP2 database (incompatible version or corrupted)");
+		}
+	}
 
 	private UniqueDB db;
 	private Node dataTable;
 	private Node ipTable;
+	
+	static final int VERSION_ID = 9988432;
 
 }

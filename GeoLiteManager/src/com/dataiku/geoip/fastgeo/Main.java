@@ -3,6 +3,7 @@ package com.dataiku.geoip.fastgeo;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -19,7 +20,6 @@ public class Main {
 	public static void main(String[] args) throws IOException {
 
 
-	    
 		convert(args[0], args[1]);
 		bench(args[0], args[1]);
 
@@ -67,11 +67,13 @@ public class Main {
 		Reader mmdb = new Reader(new File(mmdbFilename));
 
 		// Take all the split addresses to make sure we test everything
-		List<InetAddress> addresses = mmdb.getRanges();
-
+		List<InetAddress> addressesInet = mmdb.getRanges();
+		
+		
+		
 		// Add some "pathological" addresses to make sure they work as expected
-		addresses.add(InetAddress.getByName("0.0.0.0"));
-		addresses.add(InetAddress.getByName("255.255.255.255"));
+		addressesInet.add(InetAddress.getByName("0.0.0.0"));
+		addressesInet.add(InetAddress.getByName("255.255.255.255"));
 
 		// Generate random IP addresses
 		int nbRandomIP = 100000;
@@ -79,12 +81,18 @@ public class Main {
 		for (int k = 0; k < nbRandomIP; k++) {
 			String ip = rd.nextInt(256) + "." + rd.nextInt(256) + "."
 					+ rd.nextInt(256) + "." + rd.nextInt(256);
-			addresses.add(InetAddress.getByName(ip));
+			addressesInet.add(InetAddress.getByName(ip));
+		}
+		
+		List<String> addressesString = new ArrayList<String>();
+		
+		for(InetAddress addr : addressesInet) {
+			addressesString.add(addr.getHostAddress());
 		}
 
-		System.out.println("Benchmark size : " + addresses.size() + " IPs");
+		System.out.println("Benchmark size : " + addressesInet.size() + " IPs");
 
-		int nbPasses = 5;
+		int nbPasses = 50;
 		for (int k = 0; k < nbPasses; k++) {
 
 			int hashFGDB = 0;
@@ -92,8 +100,10 @@ public class Main {
 
 			long T1 = System.currentTimeMillis();
 
-			for (InetAddress addr : addresses) {
+			for (String addr : addressesString) {
+				
 				Result res = fgdb.find(addr);
+				
 				if (res != null) {
 
 					hashFGDB = 31 * hashFGDB + res.getLatitude().hashCode();
@@ -110,7 +120,7 @@ public class Main {
 					for (Subdivision region : res.getSubdivisions()) {
 					    hashFGDB = 31 * hashFGDB + region.name.hashCode();
 					    hashFGDB = 31 * hashFGDB + region.code.hashCode();
-					} 
+					}
                     
 				}
 
@@ -118,12 +128,12 @@ public class Main {
 
 			long T2 = System.currentTimeMillis();
 
-			for (InetAddress addr : addresses) {
+			for (InetAddress addr : addressesInet) {
 
 				JsonNode n = mmdb.get(addr);
-
+				
 				if (n != null) {
-
+					
 					hashMMDB = 31
 							* hashMMDB
 							+ n.path("location").path("latitude").asText()

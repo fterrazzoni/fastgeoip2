@@ -102,23 +102,23 @@ public class FastGeoIP2 {
 		}
 
 		public String getCountryCode() {
-			return root.getArray(4).getArray(1).getString(1);
+			return root.getArray(4).getString(2);
 		}
 
 		public String getTimezone() {
-			return root.getArray(4).getArray(1).getString(2);
+			return root.getArray(4).getString(3);
 		}
 
 		public String getCountry() {
-			return root.getArray(4).getArray(1).getString(0);
+			return root.getArray(4).getString(1);
 		}
 
 		public String getContinent() {
-			return root.getArray(4).getArray(1).getArray(3).getString(0);
+			return root.getArray(4).getArray(4).getString(0);
 		}
 
 		public String getContinentCode() {
-			return root.getArray(4).getArray(1).getArray(3).getString(1);
+			return root.getArray(4).getArray(4).getString(1);
 		}
 
 		public String getLatitude() {
@@ -129,14 +129,23 @@ public class FastGeoIP2 {
 			return root.getString(1);
 		}
 
-		public List<String> getSubdivisions() {
-			ReadableArray arr = root.getArray(4).getArray(0);
-			ArrayList<String> list = new ArrayList<String>();
-			for (int i = 0; i < arr.size(); i++) {
-				list.add(arr.getString(i));
-			}
-			return list;
+		static public class Subdivision {
+		    public String name;
+		    public String code;
 		}
+		
+		public List<Subdivision> getSubdivisions() {
+            ReadableArray arr = root.getArray(4).getArray(0);
+            ArrayList<Subdivision> list = new ArrayList<Subdivision>();
+            for (int i = 0; i < arr.size(); i++) {
+                Subdivision sub = new Subdivision();
+                sub.name = arr.getArray(i).getString(0);
+                sub.code = arr.getArray(i).getString(1);
+                list.add(sub);
+            }
+            return list;
+        }
+        
 
 	}
 	

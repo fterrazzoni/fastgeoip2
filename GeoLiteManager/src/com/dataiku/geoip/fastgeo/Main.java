@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Random;
 
 import com.dataiku.geoip.fastgeo.FastGeoIP2.Result;
+import com.dataiku.geoip.fastgeo.FastGeoIP2.Result.Subdivision;
 import com.dataiku.geoip.fastgeo.FastGeoIP2Builder.Listener;
 import com.dataiku.geoip.mmdb.Reader;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -104,8 +105,11 @@ public class Main {
 							+ res.getContinentCode().hashCode();
 					hashFGDB = 31 * hashFGDB + res.getPostalCode().hashCode();
 
-					for (String region : res.getSubdivisions())
-						hashFGDB = 31 * hashFGDB + region.hashCode();
+					for (Subdivision region : res.getSubdivisions()) {
+					    hashFGDB = 31 * hashFGDB + region.name.hashCode();
+					    hashFGDB = 31 * hashFGDB + region.code.hashCode();
+					}
+                    
 				}
 
 			}
@@ -166,6 +170,11 @@ public class Main {
 								* hashMMDB
 								+ subdivisions.get(i).path("names").path("en")
 										.asText().hashCode();
+						
+						hashMMDB = 31
+                                * hashMMDB
+                                + subdivisions.get(i).path("iso_code")
+                                        .asText().hashCode();
 
 					}
 

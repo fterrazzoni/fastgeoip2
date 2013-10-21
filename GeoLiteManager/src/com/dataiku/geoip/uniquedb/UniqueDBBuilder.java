@@ -4,26 +4,21 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 // UniqueDBBuilder : UniqueDB construction
-public final class UniqueDBBuilder extends WritableArray {
+public final class UniqueDBBuilder extends NodeBuilder {
 
 	// Create a new builder
 	public UniqueDBBuilder() {
 		super(new StringBuilder(), new ArrayList<Integer>(),
-				new HashMap<Object, Integer>());
+				new HashMap<Object, Integer>(),false);
 		meta.add(-1);
 	}
 
-	// Create a new array
-	// Notice : the newly created array cannot be used on another builder!
-	public WritableArray newArray() {
-		return new WritableArray(data, meta, map);
-	}
+
 
 	// Build an immutable UniqueDB from the current builder state
 	public UniqueDB constructDatabase() {
 
 		int index = meta.size();
-		meta.add(storage.size());
 		meta.addAll(storage);
 		meta.set(0, index);
 

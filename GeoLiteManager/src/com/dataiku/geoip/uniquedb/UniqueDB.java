@@ -6,12 +6,12 @@ import java.io.IOException;
 
 
 // UniqueDB : In-memory hierarchical string datastore optimized for highly redundant data and fast access
-// - Supported types are 'integer', 'string' and 'array' (the root is an array)
+// - Supported types are 'integer', 'string', 'array' and 'struct' (the root node is a struct)
 // - Arrays handle mixed element types
-// - No runtime type checking / bound checking 
+// - No runtime type checking / bound checking / any checking
 // - Redundant subtrees are stored once (=> the UniqueDB is actually a DAG)
 // - Very simple memory layout from a JVM POV (1 UniqueDB = 1 array + 1 string)
-public final class UniqueDB extends ReadableArray {
+public final class UniqueDB extends Node {
 
 	// Get approximated size of the UniqueDB in memory (optimistic!)
 	public int getApproxSizeInBytes() {

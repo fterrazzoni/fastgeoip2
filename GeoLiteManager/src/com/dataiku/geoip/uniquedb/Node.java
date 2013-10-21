@@ -1,23 +1,23 @@
 package com.dataiku.geoip.uniquedb;
 
-public class ReadableArray {
+public class Node {
 
-	// Get the integer at the position 'index' of the current array
+	// Get the integer at the position 'index' of the current node
 	// If the element is not an integer or if the index doesn't exist
 	// => undefined behavior
 	final public int getInteger(int index) {
 		return meta[offset + index];
 	}
 	
-	// Get the array at the position 'index' of the current array
+	// Get the node at the position 'index' of the current node
 	// If the element is not an array or if the index doesn't exist
 	// => undefined behavior
-	final public ReadableArray getArray(int index) {
+	final public Node getNode(int index) {
 		int identifier = meta[offset + index];
 		if (identifier == -1) {
 			return null;
 		} else {
-			return new ReadableArray(meta, data, identifier);
+			return new Node(meta, data, identifier);
 		}
 	}
 
@@ -33,15 +33,16 @@ public class ReadableArray {
 		return data.substring(from, to);
 	}
 	
-	// Get the size of the current array
+	// Get the number of elements in the current node
+	// If the current node is not an array node => undefined behavior
 	final public int size() {
 		return meta[offset - 1];
 	}
 
-	ReadableArray(int meta[], String data, int offset) {
+	Node(int meta[], String data, int offset) {
 		this.meta = meta;
 		this.data = data;
-		this.offset = offset + 1;
+		this.offset = offset;
 	}
 
 	final protected int[] meta;

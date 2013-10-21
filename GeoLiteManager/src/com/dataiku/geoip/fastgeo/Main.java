@@ -18,6 +18,8 @@ public class Main {
 	// 2nd argument : path to the output FastGeoIP2 DB
 	public static void main(String[] args) throws IOException {
 
+
+	    
 		convert(args[0], args[1]);
 		bench(args[0], args[1]);
 
@@ -108,7 +110,7 @@ public class Main {
 					for (Subdivision region : res.getSubdivisions()) {
 					    hashFGDB = 31 * hashFGDB + region.name.hashCode();
 					    hashFGDB = 31 * hashFGDB + region.code.hashCode();
-					}
+					} 
                     
 				}
 

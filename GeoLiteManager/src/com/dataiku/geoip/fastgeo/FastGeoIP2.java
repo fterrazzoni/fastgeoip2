@@ -12,7 +12,7 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.dataiku.geoip.uniquedb.ReadableArray;
+import com.dataiku.geoip.uniquedb.Node;
 import com.dataiku.geoip.uniquedb.UniqueDB;
 
 // FastGeoIP2 tries to solve a major drawback of GeoLite2 : a very slow API
@@ -20,7 +20,7 @@ import com.dataiku.geoip.uniquedb.UniqueDB;
 // This implementation uses another file format which is less space-efficient but
 // easier to lookup quickly. The whole file is stored in RAM for efficiency.
 //
-// Features:
+// Features: 
 // - Localize any IPv4 address
 // - Provide only a subset of the fields available in GeoLite2 (but it's easy to add more...)
 // - Much faster than the GeoLite2 Java API (30x)
@@ -35,8 +35,8 @@ public class FastGeoIP2 {
 
 		try {
 			this.db = UniqueDB.loadFromStream(dis);
-			this.dataTable = db.getArray(0);
-			this.ipTable = db.getArray(1);
+			this.dataTable = db.getNode(0);
+			this.ipTable = db.getNode(1);
 		} finally {
 			dis.close();
 		}
@@ -45,8 +45,8 @@ public class FastGeoIP2 {
 	// Construct a FastGeoIP2 using an already loaded UniqueDB
 	public FastGeoIP2(UniqueDB db) {
 		this.db = db;
-		this.dataTable = db.getArray(0);
-		this.ipTable = db.getArray(1);
+		this.dataTable = db.getNode(0);
+		this.ipTable = db.getNode(1);
 	}
 
 	// Find an IPv4 address in the database
@@ -64,7 +64,7 @@ public class FastGeoIP2 {
 		
 		int index = findIndex(ip);
 
-		ReadableArray data = dataTable.getArray(index);
+		Node data = dataTable.getNode(index);
 
 		if (data != null)
 			return new Result(data);
@@ -87,9 +87,9 @@ public class FastGeoIP2 {
 
 	static public class Result {
 
-		ReadableArray root;
+		Node root;
 
-		private Result(ReadableArray root) {
+		private Result(Node root) {
 			this.root = root;
 		}
 
@@ -102,23 +102,23 @@ public class FastGeoIP2 {
 		}
 
 		public String getCountryCode() {
-			return root.getArray(4).getString(2);
+			return root.getNode(4).getString(2);
 		}
 
 		public String getTimezone() {
-			return root.getArray(4).getString(3);
+			return root.getNode(4).getString(3);
 		}
 
 		public String getCountry() {
-			return root.getArray(4).getString(1);
+			return root.getNode(4).getString(1);
 		}
 
 		public String getContinent() {
-			return root.getArray(4).getArray(4).getString(0);
+			return root.getNode(4).getNode(4).getString(0);
 		}
 
 		public String getContinentCode() {
-			return root.getArray(4).getArray(4).getString(1);
+			return root.getNode(4).getNode(4).getString(1);
 		}
 
 		public String getLatitude() {
@@ -127,7 +127,7 @@ public class FastGeoIP2 {
 
 		public String getLongitude() {
 			return root.getString(1);
-		}
+		} 
 
 		static public class Subdivision {
 		    public String name;
@@ -135,12 +135,12 @@ public class FastGeoIP2 {
 		}
 		
 		public List<Subdivision> getSubdivisions() {
-            ReadableArray arr = root.getArray(4).getArray(0);
+            Node arr = root.getNode(4).getNode(0);
             ArrayList<Subdivision> list = new ArrayList<Subdivision>();
             for (int i = 0; i < arr.size(); i++) {
                 Subdivision sub = new Subdivision();
-                sub.name = arr.getArray(i).getString(0);
-                sub.code = arr.getArray(i).getString(1);
+                sub.name = arr.getNode(i).getString(0);
+                sub.code = arr.getNode(i).getString(1);
                 list.add(sub);
             }
             return list;
@@ -185,7 +185,7 @@ public class FastGeoIP2 {
 	
 
 	private UniqueDB db;
-	private ReadableArray dataTable;
-	private ReadableArray ipTable;
+	private Node dataTable;
+	private Node ipTable;
 
 }

@@ -8,8 +8,9 @@ import java.util.List;
 import com.dataiku.geoip.mmdb.Reader;
 import com.dataiku.geoip.uniquedb.UniqueDB;
 import com.dataiku.geoip.uniquedb.UniqueDBBuilder;
-import com.dataiku.geoip.uniquedb.WritableArray;
+import com.dataiku.geoip.uniquedb.NodeBuilder;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.sun.xml.internal.bind.v2.runtime.unmarshaller.XsiNilLoader.Array;
 
 // Convert a GeoLite2 MMDB file to a FastGeoIP2 database
 public class FastGeoIP2Builder {
@@ -18,6 +19,7 @@ public class FastGeoIP2Builder {
     static public interface Listener {
         public void progress(int processed, int total);
     }
+    private NodeBuilder schemaTable;
 
     // Construct the builder with a GeoLite2 database
     FastGeoIP2Builder(File mmdbFile) {
@@ -27,11 +29,13 @@ public class FastGeoIP2Builder {
     // Start the conversion procedure
     FastGeoIP2 build(Listener listener) throws IOException {
 
-        dbBuilder = new UniqueDBBuilder();
-        dataTable = dbBuilder.newArray();
-        ipTable = dbBuilder.newArray();
+        db = new UniqueDBBuilder();
+        dataTable = db.array();
+        ipTable = db.array();
+        schemaTable = db.array();
+        
         Reader geoliteDatabase = new Reader(geoliteFile);
-
+        
         try {
             List<InetAddress> ranges = geoliteDatabase.getRanges();
 
@@ -43,13 +47,13 @@ public class FastGeoIP2Builder {
                 if (listener != null) {
                     listener.progress(1 + i, ranges.size());
                 }
-
             }
 
-            dbBuilder.addArray(dataTable);
-            dbBuilder.addArray(ipTable);
+            db.add(dataTable);
+            db.add(ipTable);
+            
 
-            UniqueDB udb = dbBuilder.constructDatabase();
+            UniqueDB udb = db.constructDatabase();
             return new FastGeoIP2(udb);
 
         } finally {
@@ -57,8 +61,8 @@ public class FastGeoIP2Builder {
             geoliteDatabase.close();
 
         }
-
     }
+ 
 
     // Insert an IP record using the data contained in a JsonNode
     private void insert(InetAddress address, JsonNode node) {
@@ -72,7 +76,7 @@ public class FastGeoIP2Builder {
         int ipAddress = (int) (((bytes[0] & 0xFFL) << 24)
                 | ((bytes[1] & 0xFFL) << 16) | ((bytes[2] & 0xFFL) << 8) | (bytes[3]) & 0xFFL);
 
-        WritableArray ipDetails = null;
+        NodeBuilder ipDetails = null;
 
         if (node != null) {
 
@@ -89,7 +93,7 @@ public class FastGeoIP2Builder {
                     .asText();
             String timezone = node.path("location").path("time_zone").asText();
 
-            WritableArray regions = dbBuilder.newArray();
+            NodeBuilder regions = db.array();
 
             JsonNode subdivisions = node.path("subdivisions");
 
@@ -99,39 +103,43 @@ public class FastGeoIP2Builder {
                         .asText();
                 String code = subdivisions.get(i).path("iso_code").asText();
 
-                regions.addArray(dbBuilder.newArray().addString(name)
-                        .addString(code));
+                regions.add(db.struct().add(name)
+                        .add(code));
             }
 
             // If you modify this tree, don't forget to update the getters in
             // FastGeoIP2 !
-            ipDetails = dbBuilder
-                    .newArray()
-                    .addString(latitude)
-                    .addString(longitude)
-                    .addString(postalcode)
-                    .addString(city)
-                    .addArray(
-                            dbBuilder
-                                    .newArray()
-                                    .addArray(regions)
-                                    .addString(country)
-                                    .addString(countrycode)
-                                    .addString(timezone)
-                                    .addArray(
-                                            dbBuilder.newArray()
-                                            .addString(continent)
-                                                    .addString(continentcode)));
+            
+            
+            ipDetails = db
+                    .struct()
+                    .add(latitude)
+                    .add(longitude)
+                    .add(postalcode)
+                    .add(city)
+                    .add(
+                            db
+                                    .struct()
+                                    .add(regions)
+                                    .add(country)
+                                    .add(countrycode)
+                                    .add(timezone)
+                                    .add(
+                                            db.struct()
+                                            .add(continent)
+                                                    .add(continentcode)));
+            
         }
-
-        dataTable.addArray(ipDetails);
-        ipTable.addInteger(ipAddress);
+        
+        dataTable.add(ipDetails);
+        ipTable.add(ipAddress);
+        
 
     }
 
-    private UniqueDBBuilder dbBuilder;
-    private WritableArray dataTable;
-    private WritableArray ipTable;
+    private UniqueDBBuilder db;
+    private NodeBuilder dataTable;
+    private NodeBuilder ipTable;
     private File geoliteFile;
 
 }

@@ -5,8 +5,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.List;
 
-import javax.management.RuntimeErrorException;
-
 import com.dataiku.geoip.mmdb.Reader;
 import com.dataiku.geoip.uniquedb.NodeBuilder;
 import com.dataiku.geoip.uniquedb.UniqueDB;
@@ -103,13 +101,22 @@ public class FastGeoIP2Builder {
             // FastGeoIP2 !
             ipDetails = db.newStruct()
 
-            .add(latitude).add(longitude).add(postalcode).add(city).add(db.newStruct()
-
-            .add(regions).add(country).add(countrycode).add(timezone)
-
-            .add(db.newStruct().add(continent).add(continentcode))
-
-            );
+                    .add(latitude)
+                    .add(longitude)
+                    .add(postalcode)
+                    .add(city)
+                    .add(
+                            db.newStruct()
+                            .add(regions)
+                            .add(country)
+                            .add(countrycode)
+                            .add(timezone)
+                            .add(
+                                    db.newStruct()
+                                    .add(continent)
+                                    .add(continentcode)
+                             )
+                     );
 
         }
 

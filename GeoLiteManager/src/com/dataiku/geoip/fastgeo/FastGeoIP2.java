@@ -32,9 +32,10 @@ public class FastGeoIP2 {
 
         try (
 
-        FileInputStream fis = new FileInputStream(file);
+                FileInputStream fis = new FileInputStream(file);
                 BufferedInputStream bis = new BufferedInputStream(fis);
-                DataInputStream dis = new DataInputStream(bis)) {
+                DataInputStream dis = new DataInputStream(bis)) 
+        {
             
             initialize(UniqueDB.loadFromStream(dis));
 
@@ -50,16 +51,17 @@ public class FastGeoIP2 {
 
     }
 
-    // Find an IPv4 address in the database
+    // Find an IPv4 address in the database (anything else will throw an InvalidIPAddress!)
     // Return null if the IP has not been found, or a Result object
     public Result find(String addr) throws InvalidIPAddress {
 
         if (addr == null || addr.isEmpty()) {
-            throw new InvalidIPAddress("IP address cannot be null or empty");
+            throw new InvalidIPAddress("Invalid IP address (error : cannot be null or empty)");
         }
 
         long ip = 0;
         long blockVal = 0;
+        int blockSize = 0;
         int blockNum = 0;
 
         for (int i = 0; i < addr.length(); i++) {
@@ -68,26 +70,35 @@ public class FastGeoIP2 {
 
             if (c >= '0' && c <= '9') {
                 blockVal = blockVal * 10 + c - '0';
+                blockSize++;
             }
 
             if (c == '.' || i == addr.length() - 1) {
 
                 if (blockVal < 0 || blockVal > 255) {
-                    throw new InvalidIPAddress("Invalid IP address format");
+                    throw new InvalidIPAddress("Invalid IP address (error : value is not in [0, 255])");
+                }
+                
+                if(blockSize==0) {
+                    throw new InvalidIPAddress("Invalid IP address (error : missing part value)");
                 }
 
                 ip += blockVal << (24 - (8 * blockNum));
                 blockVal = 0;
+                blockSize = 0;
                 blockNum++;
             }
 
-            if (blockNum > 4 || (c != '.' && (c < '0' || c > '9'))) {
-                throw new InvalidIPAddress("Invalid IP address format");
+            if (blockNum > 4) {
+                throw new InvalidIPAddress("Invalid IP address (error : number of parts cannot be > 4)");
+            }
+            if(c != '.' && (c < '0' || c > '9')) {
+                throw new InvalidIPAddress("Invalid IP address (error : invalid character '"+c+"')");
             }
         }
 
-        if (blockNum != 4) {
-            throw new InvalidIPAddress("Invalid IP address format");
+        if (blockNum < 4) {
+            throw new InvalidIPAddress("Invalid IP address (error : number of parts cannot be < 4)");
         }
 
         int index = findIndex(ip);

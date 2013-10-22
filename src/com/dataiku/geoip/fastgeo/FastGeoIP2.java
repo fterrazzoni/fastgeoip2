@@ -41,7 +41,7 @@ public class FastGeoIP2 {
 
         } catch (IOException e) {
 
-            throw new InvalidFastGeoIP2DatabaseException("Invalid FastGeoIP2 database (I/O error)", e);
+            throw new InvalidFastGeoIP2DatabaseException("Unable to open FastGeoIP2 database (I/O error)", e);
 
         } catch (InvalidUniqueDBException e) {
 
@@ -229,21 +229,22 @@ public class FastGeoIP2 {
 
     private void initialize(UniqueDB db) throws InvalidFastGeoIP2DatabaseException {
         this.db = db;
-        this.dataTable = db.getNode(0);
-        this.ipTable = db.getNode(1);
-        checkVersion();
+        
+        if(db.size() !=4 || db.getInteger(0) != FGDB_MARKER || db.getInteger(1) != VERSION_ID) {
+        	throw new InvalidFastGeoIP2DatabaseException("Cannot load FastGeoIP2 database (invalid database or incompatible version)");
+        }
+        
+        this.dataTable = db.getNode(2);
+        this.ipTable = db.getNode(3);
+
     }
 
-    private void checkVersion() throws InvalidFastGeoIP2DatabaseException {
-        if (db.size()!=3 || db.getInteger(2) != VERSION_ID) {
-            throw new InvalidFastGeoIP2DatabaseException("Cannot load FastGeoIP2 database (incompatible version or corrupted)");
-        }
-    }
 
     private UniqueDB db;
     private Node dataTable;
     private Node ipTable;
 
-    static final int VERSION_ID = 9988439;
+	static final int VERSION_ID = 1;
+	static final int FGDB_MARKER = 1181889348;
 
 }

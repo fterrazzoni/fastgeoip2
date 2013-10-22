@@ -36,26 +36,26 @@ public class FastGeoIP2Builder {
             List<InetAddress> ranges = geoliteDatabase.getRanges();
 
             for (int i = 0; i < ranges.size(); i++) {
+            	
                 InetAddress addr = ranges.get(i);
                 JsonNode node = geoliteDatabase.get(addr);
                 insert(addr, node);
-
+                
                 if (listener != null) {
                     listener.progress(1 + i, ranges.size());
                 }
             }
-
+            
+            db.add(FastGeoIP2.FGDB_MARKER);
+            db.add(FastGeoIP2.VERSION_ID);
             db.add(dataTable);
             db.add(ipTable);
-            db.add(FastGeoIP2.VERSION_ID);
 
             UniqueDB udb = db.constructDatabase();
             return new FastGeoIP2(udb);
 
         } catch (InvalidFastGeoIP2DatabaseException e) {
-            
-            throw new RuntimeException("The FastGeoIP2Builder generated an invalid UniqueDB");
-            
+            throw new RuntimeException("The FastGeoIP2Builder generated an invalid UniqueDB",e);
         } 
             
     }

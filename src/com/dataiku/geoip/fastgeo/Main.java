@@ -19,7 +19,7 @@ public class Main {
 	// 2nd argument : path to the output FastGeoIP2 DB
 	public static void main(String[] args) throws IOException, InvalidFastGeoIP2DatabaseException, InvalidIPAddress {
 
-		convert(args[0], args[1]);
+		//convert(args[0], args[1]);
 		bench(args[0], args[1]);
 
 	}
@@ -91,7 +91,7 @@ public class Main {
 
 		System.out.println("Benchmark size : " + addressesInet.size() + " IPs");
 
-		int nbPasses = 5;
+		int nbPasses = 50;
 		for (int k = 0; k < nbPasses; k++) {
 
 			int hashFGDB = 0;

@@ -12,8 +12,6 @@ public final class UniqueDBBuilder extends NodeBuilder {
 		meta.add(-1);
 	}
 
-
-
 	// Build an immutable UniqueDB from the current builder state
 	public UniqueDB constructDatabase() {
 	    

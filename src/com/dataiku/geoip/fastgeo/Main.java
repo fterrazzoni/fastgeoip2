@@ -19,7 +19,7 @@ public class Main {
 	// 2nd argument : path to the output FastGeoIP2 DB
 	public static void main(String[] args) throws IOException, InvalidFastGeoIP2DatabaseException, InvalidIPAddress {
 
-		//convert(args[0], args[1]);
+		convert(args[0], args[1]);
 		bench(args[0], args[1]);
 
 	}
@@ -31,6 +31,7 @@ public class Main {
 		System.out.println("Convert GeoLite2 MMDB -> FastGeoIP2 FGDB...");
 		System.out.println("MaxMind GeoLite database : " + mmdbInputFilename);
 		System.out.println("Output FastGeoIP database : " + fgdbOutputFilename);
+		
 		File inputMMDB = new File(mmdbInputFilename);
 		File outputFGDB = new File(fgdbOutputFilename);
 
@@ -68,16 +69,14 @@ public class Main {
 		// Take all the split addresses to make sure we test everything
 		List<InetAddress> addressesInet = mmdb.getRanges();
 		
-		
-		
 		// Add some "pathological" addresses to make sure they work as expected
 		addressesInet.add(InetAddress.getByName("0.0.0.0"));
 		addressesInet.add(InetAddress.getByName("255.255.255.255"));
 
 		// Generate random IP addresses
-		int nbRandomIP = 100000;
+		int nbRandomIPs = 100000;
 		Random rd = new Random(123);
-		for (int k = 0; k < nbRandomIP; k++) {
+		for (int k = 0; k < nbRandomIPs; k++) {
 			String ip = rd.nextInt(256) + "." + rd.nextInt(256) + "."
 					+ rd.nextInt(256) + "." + rd.nextInt(256);
 			addressesInet.add(InetAddress.getByName(ip));
@@ -91,7 +90,7 @@ public class Main {
 
 		System.out.println("Benchmark size : " + addressesInet.size() + " IPs");
 
-		int nbPasses = 50;
+		int nbPasses = 10;
 		for (int k = 0; k < nbPasses; k++) {
 
 			int hashFGDB = 0;
@@ -104,7 +103,7 @@ public class Main {
 				Result res = fgdb.find(addr);
 				
 				if (res != null) {
-
+					
 					hashFGDB = 31 * hashFGDB + res.getLatitude().hashCode();
 					hashFGDB = 31 * hashFGDB + res.getLongitude().hashCode();
 					hashFGDB = 31 * hashFGDB + res.getTimezone().hashCode();
@@ -126,12 +125,17 @@ public class Main {
 			}
 
 			long T2 = System.currentTimeMillis();
-
+			
 			for (InetAddress addr : addressesInet) {
 
 				JsonNode n = mmdb.get(addr);
+				Result res = fgdb.find(addr.getHostAddress());
 				
-				if (n != null) {
+				
+				if (n != null && res!=null) {
+					if(!res.getLatitude().equals(n.path("location").path("latitude").asText())) {
+						System.out.println(addr);
+					}
 					
 					hashMMDB = 31
 							* hashMMDB

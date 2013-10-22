@@ -68,9 +68,15 @@ public class FastGeoIP2Builder {
         if (bytes.length != 4) {
             throw new IllegalArgumentException("FastGeoIP2 supports IPv4 only");
         }
-
-        int ipAddress = (int) (((bytes[0] & 0xFFL) << 24) | ((bytes[1] & 0xFFL) << 16) | ((bytes[2] & 0xFFL) << 8) | (bytes[3]) & 0xFFL);
-
+        
+        int ipAddress =  (int) (
+        	  (((bytes[0] & 0xFFL) << 24) 
+        	| ((bytes[1] & 0xFFL) << 16) 
+        	| ((bytes[2] & 0xFFL) << 8) 
+        	|  (bytes[3] & 0xFFL))
+        	+ Integer.MIN_VALUE
+        );
+        
         NodeBuilder ipDetails = null;
 
         if (node != null) {

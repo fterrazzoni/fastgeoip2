@@ -24,10 +24,11 @@ import com.dataiku.geoip.uniquedb.UniqueDB;
 // - Localize any IPv4 address
 // - Provide only a subset of the fields available in GeoLite2 (but it's easy to add more...)
 // - Much faster than the GeoLite2 Java API (30x)
-
 public class FastGeoIP2 {
 
-    // Instantiate a new FastGeoIP2 from a file
+
+	private int[] ips;
+	// Instantiate a new FastGeoIP2 from a file
     public FastGeoIP2(File file) throws InvalidFastGeoIP2DatabaseException {
 
         try (
@@ -50,17 +51,16 @@ public class FastGeoIP2 {
         }
 
     }
-
-    // Find an IPv4 address in the database (anything else will throw an InvalidIPAddress!)
-    // Return null if the IP has not been found, or a Result object
-    public Result find(String addr) throws InvalidIPAddress {
+    
+    // Parse an IPv4 and store it into an integer
+    private int parseIPv4(String addr) throws InvalidIPAddress {
 
         if (addr == null || addr.isEmpty()) {
             throw new InvalidIPAddress("Invalid IP address (error : cannot be null or empty)");
         }
-
-        long ip = 0;
-        long blockVal = 0;
+        
+        int ip = Integer.MIN_VALUE;
+        int blockVal = 0;
         int blockSize = 0;
         int blockNum = 0;
 
@@ -83,7 +83,7 @@ public class FastGeoIP2 {
                     throw new InvalidIPAddress("Invalid IP address (error : missing part value)");
                 }
 
-                ip += blockVal << (24 - (8 * blockNum));
+                ip += (blockVal << (24 - (8 * blockNum)));
                 blockVal = 0;
                 blockSize = 0;
                 blockNum++;
@@ -100,7 +100,17 @@ public class FastGeoIP2 {
         if (blockNum < 4) {
             throw new InvalidIPAddress("Invalid IP address (error : number of parts cannot be < 4)");
         }
+        
 
+        return ip;
+    }
+
+    // Find an IPv4 address in the database (anything else will throw an InvalidIPAddress!)
+    // Return null if the IP has not been found, or a Result object
+    public Result find(String addr) throws InvalidIPAddress {
+
+        int ip = parseIPv4(addr);
+ 
         int index = findIndex(ip);
 
         Node data = dataTable.getNode(index);
@@ -191,35 +201,27 @@ public class FastGeoIP2 {
 
     }
 
-    private int findIndex(long queryIP) {
+    // Find the record index of an IP address in the lookup table (binary search)
+    private int findIndex(int queryIP) {
+    	
+    	int minIdx = 0;
+    	int maxIdx = ipTable.size()-1;
+    	
+    	while(minIdx <= maxIdx) {
+    		
+    		int midIdx = (minIdx+maxIdx) >>> 1;
+    		int currentIP = ipTable.getInteger(midIdx);
+    		
+    		if(currentIP<queryIP) {
+    			minIdx = midIdx+1;
+    		} else if(currentIP>queryIP) {
+    			maxIdx = midIdx-1;
+    		} else {
+    			return midIdx;
+    		}
+    	}
 
-        int minIdx = 0;
-        int maxIdx = ipTable.size() - 1;
-        int midIdx = -1;
-
-        while (maxIdx > minIdx) {
-
-            midIdx = (minIdx + maxIdx) / 2;
-
-            long midIP = ipTable.getInteger(midIdx) & 0xFFFFFFFFL;
-
-            if (midIP > queryIP) {
-                maxIdx = Math.max(0, midIdx - 1);
-            } else if (midIP < queryIP) {
-                minIdx = Math.min(midIdx + 1, ipTable.size() - 1);
-            } else {
-                return midIdx;
-            }
-        }
-
-        long foundIP = ipTable.getInteger(minIdx) & 0xFFFFFFFFL;
-
-        if (foundIP > queryIP) {
-            minIdx = Math.max(minIdx - 1, 0);
-            foundIP = ipTable.getInteger(minIdx) & 0xFFFFFFFFL;
-        }
-
-        return minIdx;
+    	return minIdx-1;
     }
 
     // Construct a FastGeoIP2 using an already loaded UniqueDB
@@ -236,7 +238,9 @@ public class FastGeoIP2 {
         
         this.dataTable = db.getNode(2);
         this.ipTable = db.getNode(3);
-
+        ips = new int[ipTable.size()];
+        for(int i = 0 ; i < ips.length ; i++)
+        	ips[i] = ipTable.getInteger(i);
     }
 
 
@@ -244,7 +248,7 @@ public class FastGeoIP2 {
     private Node dataTable;
     private Node ipTable;
 
-	static final int VERSION_ID = 1;
+	static final int VERSION_ID = 2;
 	static final int FGDB_MARKER = 1181889348;
 
 }

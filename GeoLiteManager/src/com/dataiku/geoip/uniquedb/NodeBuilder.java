@@ -88,5 +88,5 @@ public class NodeBuilder {
 	protected GrowableIntArray meta;
 	protected HashMap<Object, Integer> map;
 	protected GrowableIntArray storage = new GrowableIntArray();
-	private boolean writeSize;
+	protected boolean writeSize;
 }

@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.List;
 
+import javax.management.RuntimeErrorException;
+
 import com.dataiku.geoip.mmdb.Reader;
 import com.dataiku.geoip.uniquedb.NodeBuilder;
 import com.dataiku.geoip.uniquedb.UniqueDB;
@@ -18,7 +20,7 @@ public class FastGeoIP2Builder {
     static public interface Listener {
         public void progress(int processed, int total);
     }
-  
+
     // Construct the builder with a GeoLite2 database
     FastGeoIP2Builder(File mmdbFile) {
         geoliteFile = mmdbFile;
@@ -30,10 +32,9 @@ public class FastGeoIP2Builder {
         db = new UniqueDBBuilder();
         dataTable = db.newArray();
         ipTable = db.newArray();
-        
-        Reader geoliteDatabase = new Reader(geoliteFile);
-        
-        try {
+
+        try (Reader geoliteDatabase = new Reader(geoliteFile)) {
+            
             List<InetAddress> ranges = geoliteDatabase.getRanges();
 
             for (int i = 0; i < ranges.size(); i++) {
@@ -46,20 +47,20 @@ public class FastGeoIP2Builder {
                 }
             }
 
-            db.add(FastGeoIP2.VERSION_ID);
             db.add(dataTable);
             db.add(ipTable);
+            db.add(FastGeoIP2.VERSION_ID);
 
             UniqueDB udb = db.constructDatabase();
             return new FastGeoIP2(udb);
 
-        } finally {
-
-            geoliteDatabase.close();
-
-        }
+        } catch (InvalidFastGeoIP2DatabaseException e) {
+            
+            throw new RuntimeException("The FastGeoIP2Builder generated an invalid UniqueDB");
+            
+        } 
+            
     }
- 
 
     // Insert an IP record using the data contained in a JsonNode
     private void insert(InetAddress address, JsonNode node) {
@@ -70,8 +71,7 @@ public class FastGeoIP2Builder {
             throw new IllegalArgumentException("FastGeoIP2 supports IPv4 only");
         }
 
-        int ipAddress = (int) (((bytes[0] & 0xFFL) << 24)
-                | ((bytes[1] & 0xFFL) << 16) | ((bytes[2] & 0xFFL) << 8) | (bytes[3]) & 0xFFL);
+        int ipAddress = (int) (((bytes[0] & 0xFFL) << 24) | ((bytes[1] & 0xFFL) << 16) | ((bytes[2] & 0xFFL) << 8) | (bytes[3]) & 0xFFL);
 
         NodeBuilder ipDetails = null;
 
@@ -82,12 +82,9 @@ public class FastGeoIP2Builder {
             String city = node.path("city").path("names").path("en").asText();
             String postalcode = node.path("postal").path("code").asText();
             String countrycode = node.path("country").path("iso_code").asText();
-            String country = node.path("country").path("names").path("en")
-                    .asText();
-            String continentcode = node.path("continent").path("iso_code")
-                    .asText();
-            String continent = node.path("continent").path("names").path("en")
-                    .asText();
+            String country = node.path("country").path("names").path("en").asText();
+            String continentcode = node.path("continent").path("iso_code").asText();
+            String continent = node.path("continent").path("names").path("en").asText();
             String timezone = node.path("location").path("time_zone").asText();
 
             NodeBuilder regions = db.newArray();
@@ -96,8 +93,7 @@ public class FastGeoIP2Builder {
 
             for (int i = 0; i < subdivisions.size(); i++) {
 
-                String name = subdivisions.get(i).path("names").path("en")
-                        .asText();
+                String name = subdivisions.get(i).path("names").path("en").asText();
                 String code = subdivisions.get(i).path("iso_code").asText();
 
                 regions.add(db.newStruct().add(name).add(code));
@@ -106,31 +102,19 @@ public class FastGeoIP2Builder {
             // If you modify this tree, don't forget to update the getters in
             // FastGeoIP2 !
             ipDetails = db.newStruct()
-                    
-                    .add(latitude)
-                    .add(longitude)
-                    .add(postalcode)
-                    .add(city)
-                    .add(
-                    	db.newStruct()
-                    	
-                        .add(regions)
-                        .add(country)
-                        .add(countrycode)
-                        .add(timezone)
-                        
-                        .add(db.newStruct()
-                            .add(continent)
-                            .add(continentcode)
-                         )
-                         
-                     );
-            
+
+            .add(latitude).add(longitude).add(postalcode).add(city).add(db.newStruct()
+
+            .add(regions).add(country).add(countrycode).add(timezone)
+
+            .add(db.newStruct().add(continent).add(continentcode))
+
+            );
+
         }
-        
+
         dataTable.add(ipDetails);
         ipTable.add(ipAddress);
-        
 
     }
 

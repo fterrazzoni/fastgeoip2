@@ -17,7 +17,7 @@ public class Main {
 
 	// 1st argument : path to the GeoLite2 DB
 	// 2nd argument : path to the output FastGeoIP2 DB
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) throws IOException, InvalidFastGeoIP2DatabaseException, InvalidIPAddress {
 
 
 		convert(args[0], args[1]);
@@ -58,7 +58,7 @@ public class Main {
 	// Run a perf benchmark FastGeoIP2 VS MaxMind GeoIP2 API
 	// Check that they both produces the same output!
 	static public void bench(String mmdbFilename, String fgdbFilename)
-			throws IOException {
+			throws  InvalidFastGeoIP2DatabaseException, IOException, InvalidIPAddress {
 
 		// Benchmark the generated DB
 		System.out.println("Run benchmark...");

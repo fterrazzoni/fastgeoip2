@@ -11,9 +11,14 @@ import java.util.zip.Adler32;
 // - No runtime type checking / bound checking / any checking
 // - Redundant subtrees are stored once (=> the UniqueDB is actually a DAG)
 // - Very simple memory layout from a JVM POV (1 UniqueDB = 1 array + 1 string)
-public final class UniqueDB extends Node {
+public final class UniqueDB {
 
-	// Write the UniqueDB to a DataOutputStream
+    public Array root() {
+        return root;
+    }
+    
+	
+    // Write the UniqueDB to a DataOutputStream
 	public void writeToStream(DataOutputStream dos) throws IOException {
 
 		Adler32 checksum = new Adler32();
@@ -88,10 +93,16 @@ public final class UniqueDB extends Node {
 
 	}
 
-	UniqueDB(String data, int[] meta) {
-		super(meta, data, meta[0]);
+	public UniqueDB(String data, int[] meta) {
+	    this.root = new Array(this, meta[0]);
+	    this.data = data;
+	    this.meta = meta;
 	}
-
+	
+	final private Array root;
+	final String data;
+    final int[] meta;
+    
 	private static final int VERSION_ID = 1;
 	private static final int UDB_MARKER = 1433486402;
 

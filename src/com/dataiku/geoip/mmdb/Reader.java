@@ -11,10 +11,12 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -100,22 +102,25 @@ public final class Reader implements Closeable {
         }
         return this.resolveDataPointer(pointer);
     }
-
-    int previousRecord = -1;
-
     
+    int previousRecord;
+    
+
     // Get the splits between IPv4 ranges 
     // Warning : this method doesn't exist in the official MaxMind DB reader
-    public List<InetAddress> getRanges() {
+    public List<InetAddress> getRanges(int bitLength) {
 
         try {
 
             List<InetAddress> ips = new ArrayList<InetAddress>();
 
-            int record = startNode(32);
-            visitorHelper(record, 0, 0, 0, ips);
-            visitorHelper(record, 1, 0, 0, ips);
-
+            int record = startNode(bitLength);
+            System.out.println("Start="+record);
+            previousRecord = -1;
+            visitorHelper(record, 0, 0, new byte[bitLength/8], ips);
+            visitorHelper(record, 1, 0, new byte[bitLength/8], ips);
+            
+            
             return ips;
 
         } catch (Exception e) {
@@ -124,29 +129,34 @@ public final class Reader implements Closeable {
         }
 
     }
+    
     // Recursive helper for getRanges()
     // Warning : this method doesn't exist in the official MaxMind DB reader
-    private void visitorHelper(int record, int bit, int depth, int ip,
+    private void visitorHelper(int record, int bit, int depth, byte ip[],
             List<InetAddress> ips) throws InvalidDatabaseException,
             UnknownHostException {
 
+        
         record = this.readNode(record, bit);
-        ip |= (bit << (31 - depth));
-
         if (record < this.metadata.nodeCount) {
+            
+            ip[depth/8] |= (bit<<(7-depth%8));
             visitorHelper(record, 0, depth + 1, ip, ips);
             visitorHelper(record, 1, depth + 1, ip, ips);
+            ip[depth/8] &= ~(bit<<(7-depth%8));
+            
         } else {
+            
             if (record != previousRecord) {
-                ips.add(InetAddress.getByAddress(new byte[] {
-                        (byte) ((ip >>> 24) & 0xff),
-                        (byte) ((ip >>> 16) & 0xff),
-                        (byte) ((ip >>> 8) & 0xff), (byte) ((ip) & 0xff) }));
+                ips.add(Inet6Address.getByAddress(ip));
             }
             previousRecord = record;
         }
 
     }
+    
+    
+    
     
 
     // Dump the database to a text file
@@ -157,7 +167,7 @@ public final class Reader implements Closeable {
 
         FileOutputStream ofs = new FileOutputStream(output);
         PrintStream stro = new PrintStream(ofs);
-        List<InetAddress> addresses = getRanges();
+        List<InetAddress> addresses = getRanges(32);
         int ok = 0;
         int bad = 0;
         for (InetAddress addr : addresses) {
@@ -189,7 +199,7 @@ public final class Reader implements Closeable {
 
         int bitLength = rawAddress.length * 8;
         int record = this.startNode(bitLength);
-
+        
         for (int i = 0; i < bitLength; i++) {
             if (record >= this.metadata.nodeCount) {
                 break;

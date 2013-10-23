@@ -1,11 +1,11 @@
-package com.dataiku.geoip.uniquedb;
+package com.dataiku.geoip.uniquedb.builder;
 
 import java.util.Arrays;
 
 // Less overhead compared to ArrayList
 class GrowableIntArray {
 
-	int data[] = new int[8];
+	int data[] = new int[4];
 	int size = 0;
 
 	public void add(int value) {
@@ -46,7 +46,7 @@ class GrowableIntArray {
 	}
 	
 	@Override
-	protected GrowableIntArray clone() {
+	public GrowableIntArray clone() {
 		GrowableIntArray arr = new GrowableIntArray();
 		arr.size = size;
 		arr.data = data.clone();

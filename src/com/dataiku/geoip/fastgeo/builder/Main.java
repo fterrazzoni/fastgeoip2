@@ -1,26 +1,37 @@
-package com.dataiku.geoip.fastgeo;
+package com.dataiku.geoip.fastgeo.builder;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import com.dataiku.geoip.fastgeo.FastGeoIP2;
+import com.dataiku.geoip.fastgeo.InvalidFastGeoIP2DatabaseException;
+import com.dataiku.geoip.fastgeo.InvalidIPAddress;
+import com.dataiku.geoip.fastgeo.LookupTable;
 import com.dataiku.geoip.fastgeo.FastGeoIP2.Result;
 import com.dataiku.geoip.fastgeo.FastGeoIP2.Result.Subdivision;
-import com.dataiku.geoip.fastgeo.FastGeoIP2Builder.Listener;
+import com.dataiku.geoip.fastgeo.builder.FastGeoIP2Builder.Listener;
 import com.dataiku.geoip.mmdb.Reader;
+import com.dataiku.geoip.uniquedb.UniqueDB;
+import com.dataiku.geoip.uniquedb.builder.UniqueDBBuilder;
 import com.fasterxml.jackson.databind.JsonNode;
 
-public class Main {
+public class Main { 
 
 	// 1st argument : path to the GeoLite2 DB
 	// 2nd argument : path to the output FastGeoIP2 DB
 	public static void main(String[] args) throws IOException, InvalidFastGeoIP2DatabaseException, InvalidIPAddress {
 
+	  
+	    
+	    
+	    
 		convert(args[0], args[1]);
-		bench(args[0], args[1]);
+		//bench(args[0], args[1]);
 
 	}
 
@@ -67,7 +78,7 @@ public class Main {
 		Reader mmdb = new Reader(new File(mmdbFilename));
 
 		// Take all the split addresses to make sure we test everything
-		List<InetAddress> addressesInet = mmdb.getRanges();
+		List<InetAddress> addressesInet = mmdb.getRanges(32);
 		
 		// Add some "pathological" addresses to make sure they work as expected
 		addressesInet.add(InetAddress.getByName("0.0.0.0"));
@@ -134,6 +145,7 @@ public class Main {
 				
 				if (n != null && res!=null) {
 					if(!res.getLatitude().equals(n.path("location").path("latitude").asText())) {
+					    System.out.println(res.getCity());
 						System.out.println(addr);
 					}
 					

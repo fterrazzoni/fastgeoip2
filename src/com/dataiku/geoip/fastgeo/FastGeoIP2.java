@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.dataiku.geoip.uniquedb.InvalidUniqueDBException;
-import com.dataiku.geoip.uniquedb.Node;
+import com.dataiku.geoip.uniquedb.Array;
 import com.dataiku.geoip.uniquedb.UniqueDB;
 
 // FastGeoIP2 tries to solve a major drawback of GeoLite2 : a very slow API
@@ -113,7 +113,7 @@ public class FastGeoIP2 {
  
         int index = findIndex(ip);
 
-        Node data = dataTable.getNode(index);
+        Array data = dataTable.getNode(index);
 
         if (data != null) {
 
@@ -140,9 +140,9 @@ public class FastGeoIP2 {
 
     static public class Result {
 
-        private Node root;
+        private Array root;
 
-        Result(Node root) {
+        Result(Array root) {
             this.root = root;
         }
 
@@ -188,7 +188,7 @@ public class FastGeoIP2 {
         }
 
         final public List<Subdivision> getSubdivisions() {
-            Node arr = root.getNode(4).getNode(0);
+            Array arr = root.getNode(4).getNode(0);
             ArrayList<Subdivision> list = new ArrayList<Subdivision>();
             for (int i = 0; i < arr.size(); i++) {
                 Subdivision sub = new Subdivision();
@@ -232,23 +232,23 @@ public class FastGeoIP2 {
     private void initialize(UniqueDB db) throws InvalidFastGeoIP2DatabaseException {
         this.db = db;
         
-        if(db.size() !=4 || db.getInteger(0) != FGDB_MARKER || db.getInteger(1) != VERSION_ID) {
+       /* if(db.root().size() !=4 || db.root().getInteger(0) != FGDB_MARKER || db.root().getInteger(1) != VERSION_ID) {
         	throw new InvalidFastGeoIP2DatabaseException("Cannot load FastGeoIP2 database (invalid database or incompatible version)");
         }
         
-        this.dataTable = db.getNode(2);
-        this.ipTable = db.getNode(3);
+        this.dataTable = db.root().getNode(2);
+        this.ipTable = db.root().getNode(3);
         ips = new int[ipTable.size()];
         for(int i = 0 ; i < ips.length ; i++)
-        	ips[i] = ipTable.getInteger(i);
+        	ips[i] = ipTable.getInteger(i);*/
     }
 
 
     private UniqueDB db;
-    private Node dataTable;
-    private Node ipTable;
+    private Array dataTable;
+    private Array ipTable;
 
-	static final int VERSION_ID = 2;
-	static final int FGDB_MARKER = 1181889348;
+	public static final int VERSION_ID = 2;
+	public static final int FGDB_MARKER = 1181889348;
 
 }

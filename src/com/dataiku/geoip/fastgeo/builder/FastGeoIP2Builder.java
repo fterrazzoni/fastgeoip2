@@ -70,7 +70,7 @@ public class FastGeoIP2Builder {
         }
     }
 
-    private int[] inet2ints(InetAddress addr) {
+    static public int[] inet2ints(InetAddress addr) {
         byte[] bytes = addr.getAddress();
         int[] out = new int[bytes.length/4];
         

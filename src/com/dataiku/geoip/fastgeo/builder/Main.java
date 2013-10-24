@@ -10,6 +10,7 @@ import java.util.Random;
 import com.dataiku.geoip.fastgeo.FastGeoIP2;
 import com.dataiku.geoip.fastgeo.FastGeoIP2.Result;
 import com.dataiku.geoip.fastgeo.FastGeoIP2.Result.Subdivision;
+import com.dataiku.geoip.fastgeo.IPAddress;
 import com.dataiku.geoip.fastgeo.InvalidFastGeoIP2DatabaseException;
 import com.dataiku.geoip.fastgeo.InvalidIPAddress;
 import com.dataiku.geoip.fastgeo.builder.FastGeoIP2Builder.Listener;
@@ -22,7 +23,7 @@ public class Main {
 	// 2nd argument : path to the output FastGeoIP2 DB
 	public static void main(String[] args) throws IOException, InvalidFastGeoIP2DatabaseException, InvalidIPAddress {
 
-		//convert(args[0], args[1]);
+		convert(args[0], args[1]);
 		bench(args[0], args[1]);
 		
 	}
@@ -98,9 +99,9 @@ public class Main {
 
 			long T1 = System.currentTimeMillis();
 
-			for (InetAddress addr : addressesInet) {
+			for (String addr : addressesString) {
 
-				Result res = fgdb.find(addr);
+				Result res = fgdb.find(new IPAddress(addr));
 
 				if (res != null) {
 
@@ -118,20 +119,20 @@ public class Main {
 						hashFGDB = 31 * hashFGDB + region.name.hashCode();
 						hashFGDB = 31 * hashFGDB + region.code.hashCode();
 					}
-
+					hashFGDB++;
 				}
 
 			}
 			 
 			long T2 = System.currentTimeMillis();
-
+			
 			for (InetAddress addr : addressesInet) {
 				
 				JsonNode n = mmdb.get(addr);
+				IPAddress a= new IPAddress(addr.getHostAddress());
 				
-
 				if (n != null) {
-
+				    
 					hashMMDB = 31 * hashMMDB + n.path("location").path("latitude").asText().hashCode();
 
 					hashMMDB = 31 * hashMMDB + n.path("location").path("longitude").asText().hashCode();
@@ -158,7 +159,7 @@ public class Main {
 						hashMMDB = 31 * hashMMDB + subdivisions.get(i).path("iso_code").asText().hashCode();
 
 					}
-
+					hashMMDB++;
 				}
 			}
 

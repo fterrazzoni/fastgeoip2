@@ -15,6 +15,10 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.dataiku.geoip.fastgeo.FastGeoIP2;
+import com.dataiku.geoip.fastgeo.IPAddress;
+import com.dataiku.geoip.fastgeo.InvalidIPAddress;
+import com.dataiku.geoip.fastgeo.builder.FastGeoIP2Builder;
 import com.fasterxml.jackson.databind.JsonNode;
 
 /**
@@ -127,7 +131,7 @@ public final class Reader implements Closeable {
 	// Recursive helper for getRanges()
 	// Warning : this method doesn't exist in the official MaxMind DB reader
 	private void visitorHelper(int record, int bit, int depth, byte ip[], List<InetAddress> ips)
-			throws InvalidDatabaseException, UnknownHostException {
+			throws InvalidDatabaseException, UnknownHostException, InvalidIPAddress {
 
 		record = this.readNode(record, bit);
 
@@ -141,7 +145,18 @@ public final class Reader implements Closeable {
 		} else {
 
 			if (record != previousRecord) {
-				ips.add(Inet6Address.getByAddress(ip));
+			    InetAddress a = InetAddress.getByAddress(ip);
+			    /*int x[]= FastGeoIP2Builder.inet2ints(a);
+			    int y[]= new IPAddress(a.getHostAddress()).getIntRepresentation();
+			    for(int i = 0 ; i < 4; i++) {
+			        if(x[i]!=y[i]) {
+			            System.out.println(a.getHostAddress());
+			            System.out.println("("+i+")"+(x[i]-Integer.MIN_VALUE)+ "="+(y[i]-Integer.MIN_VALUE)+" diff "+(x[i]-y[i]));
+			            System.out.println();
+			        }
+			    }*/
+			   
+				ips.add(a);
 				
 			}
 			previousRecord = record;

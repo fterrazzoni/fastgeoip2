@@ -31,6 +31,7 @@ import com.dataiku.geoip.uniquedb.UniqueDB;
 public class FastGeoIP2 {
 
 
+    
 	// Instantiate a new FastGeoIP2 from a file
     public FastGeoIP2(File file) throws InvalidFastGeoIP2DatabaseException {
 
@@ -56,25 +57,7 @@ public class FastGeoIP2 {
     }
     
 
-    // Find an IPv4 address in the database (anything else will throw an InvalidIPAddress!)
-    // Return null if the IP has not been found, or a Result object
-    public Result find(String addr) throws InvalidIPAddress {
-
-        int ip = IPAddressParser.parseIPv4(addr);
- 
-        int index = findIndex(ip);
-
-        Node data = dataTable.getNode(index);
-
-        if (data != null) {
-
-            return new Result(data);
-
-        } else {
-
-            return null;
-        }
-    }
+    
 
     // Save the FastGeoIP2 database to a file
     public void saveToFile(File file) throws IOException {
@@ -88,8 +71,10 @@ public class FastGeoIP2 {
             dos.close();
         }
     }
+    
+    
 
-    static public class Result {
+    static final public class Result {
 
         private Node root;
 
@@ -97,48 +82,48 @@ public class FastGeoIP2 {
             this.root = root;
         }
 
-        final public String getCity() {
+        public String getCity() {
             return root.getString(3);
         }
 
-        final public String getPostalCode() {
+        public String getPostalCode() {
             return root.getString(2);
         }
 
-        final public String getCountryCode() {
+        public String getCountryCode() {
             return root.getNode(4).getString(2);
         }
 
-        final public String getTimezone() {
+        public String getTimezone() {
             return root.getNode(4).getString(3);
         }
 
-        final public String getCountry() {
+        public String getCountry() {
             return root.getNode(4).getString(1);
         }
 
-        final public String getContinent() {
+        public String getContinent() {
             return root.getNode(4).getNode(4).getString(0);
         }
 
-        final public String getContinentCode() {
+        public String getContinentCode() {
             return root.getNode(4).getNode(4).getString(1);
         }
 
-        final public String getLatitude() {
+        public String getLatitude() {
             return root.getString(0);
         }
 
-        final public String getLongitude() {
+        public String getLongitude() {
             return root.getString(1);
         }
 
-        final static public class Subdivision {
+        static public class Subdivision {
             public String name;
             public String code;
         }
 
-        final public List<Subdivision> getSubdivisions() {
+        public List<Subdivision> getSubdivisions() {
             Node arr = root.getNode(4).getNode(0);
             ArrayList<Subdivision> list = new ArrayList<Subdivision>();
             for (int i = 0; i < arr.size(); i++) {
@@ -152,8 +137,9 @@ public class FastGeoIP2 {
 
     }
 
+
     // Find the record index of an IP address in the lookup table (binary search)
-    private int findIndex(int queryIP) {
+    /*private int findIndex(int queryIP) {
     	
     	int minIdx = 0;
     	int maxIdx = ipTable.size()-1;
@@ -173,16 +159,16 @@ public class FastGeoIP2 {
     	}
 
     	return minIdx-1;
-    }
+    }*/
 
     // Construct a FastGeoIP2 using an already loaded UniqueDB
     public FastGeoIP2(UniqueDB db) throws InvalidFastGeoIP2DatabaseException {
         initialize(db);
     }
     
-    public Result find(InetAddress addr) {
+    public Result find(IPAddress addr) {
     	
-		IntBuffer intBuf = ByteBuffer
+		/*IntBuffer intBuf = ByteBuffer
 				.wrap(addr.getAddress())
 				.order(ByteOrder.BIG_ENDIAN)
 				.asIntBuffer();
@@ -195,12 +181,14 @@ public class FastGeoIP2 {
 		}
     	
     	if(words.length!=4)
-    		return null;
+    		return null;*/
+        
+        
 
     	Node node = db.root().getNode(2);
-
+    	int ip[] = addr.getIntRepresentation();
     	for(int i = 0 ; i < 4 && node != null; i++) {
-    		node = new RangeTable(node).lookup(words[i]);
+    		node = new RangeTable(node).lookup(ip[i]);
     	}
     	
     	if(node!=null) {
@@ -220,6 +208,8 @@ public class FastGeoIP2 {
     }
 
 
+    
+    
     private UniqueDB db;
     private Node dataTable;
     private Node ipTable;

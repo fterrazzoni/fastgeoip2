@@ -3,7 +3,6 @@ package com.dataiku.geoip.fastgeo.builder;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.util.ArrayList;
 import java.util.List;
 
 import com.dataiku.geoip.fastgeo.FastGeoIP2;
@@ -22,10 +21,9 @@ public class FastGeoIP2Builder {
         public void progress(int processed, int total);
     }
     
-    private LookupTableBuilder ipv6Tables[] = new LookupTableBuilder[4];
+    private RangeTableBuilder ipv6Tables[] = new RangeTableBuilder[4];
     private int lastIPv6[];
     
-    private LookupTableBuilder ipv4Table; 
 
     // Construct the builder with a GeoLite2 database
     FastGeoIP2Builder(File mmdbFile) {
@@ -36,8 +34,6 @@ public class FastGeoIP2Builder {
     FastGeoIP2 build(Listener listener) throws IOException {
 
         db = new UniqueDBBuilder();
-        ipv4Table = LookupTableBuilder.newLookupTable(db);
-
         
         try (Reader geoliteDatabase = new Reader(geoliteFile)) {
             
@@ -47,16 +43,23 @@ public class FastGeoIP2Builder {
             	
                 InetAddress addr = ranges.get(i);
                 JsonNode node = geoliteDatabase.get(addr);
+                
                 insert(addr, node);
                 
                 if (listener != null) {
                     listener.progress(1 + i, ranges.size());
                 }
-                
+                	
             }
             
             db.root().add(FastGeoIP2.FGDB_MARKER);
             db.root().add(FastGeoIP2.VERSION_ID);
+            
+            ipv6Tables[2].orderedAdd(lastIPv6[2], ipv6Tables[3]);
+            ipv6Tables[1].orderedAdd(lastIPv6[1], ipv6Tables[2]);
+            ipv6Tables[0].orderedAdd(lastIPv6[0], ipv6Tables[1]);
+            
+            
             db.root().add(ipv6Tables[0]);
 
             UniqueDB udb = db.constructDatabase();
@@ -104,8 +107,7 @@ public class FastGeoIP2Builder {
             String continent = node.path("continent").path("names").path("en").asText();
             String timezone = node.path("location").path("time_zone").asText();
 
-            NodeBuilder regions = NodeBuilder.newArray(db);
-
+            NodeBuilder regions = new NodeBuilder(db);
             JsonNode subdivisions = node.path("subdivisions");
 
             for (int i = 0; i < subdivisions.size(); i++) {
@@ -113,25 +115,25 @@ public class FastGeoIP2Builder {
                 String name = subdivisions.get(i).path("names").path("en").asText();
                 String code = subdivisions.get(i).path("iso_code").asText();
 
-                regions.add(NodeBuilder.newStruct(db).add(name).add(code));
+                regions.add(new NodeBuilder(db).setStoreSize(false).add(name).add(code));
             }
 
             // If you modify this tree, don't forget to update the getters in
             // FastGeoIP2 !
-            ipDetails = NodeBuilder.newStruct(db)
+            ipDetails =  new NodeBuilder(db).setStoreSize(false)
 
                     .add(latitude)
                     .add(longitude)
                     .add(postalcode)
                     .add(city)
                     .add(
-                            NodeBuilder.newStruct(db)
+                    		 new NodeBuilder(db).setStoreSize(false)
                             .add(regions)
                             .add(country)
                             .add(countrycode)
                             .add(timezone)
                             .add(
-                                    NodeBuilder.newStruct(db)
+                            		 new NodeBuilder(db).setStoreSize(false)
                                     .add(continent)
                                     .add(continentcode)
                              )
@@ -139,28 +141,36 @@ public class FastGeoIP2Builder {
 
         }
         
-        if(words.length == 1) { 
-            ipv4Table.orderedAdd(words[0], ipDetails);
-        } 
         
-        else if(words.length == 4) {
-            
+        try {
+			//Thread.sleep(60);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+        if(words.length == 4) {
+        	
             if(lastIPv6==null) {
+            	
                 lastIPv6 = words;
                 for(int i = 0 ; i < 4 ; i++) {
-                    ipv6Tables[i] = LookupTableBuilder.newLookupTable(db);
+                    ipv6Tables[i] = RangeTableBuilder.newLookupTable(db);
                 }
             }
             
             for(int i = 0 ; i < 4 ; i++) {
                 if(words[i] != lastIPv6[i]) {
+                	
                     for(int j = 3; j > i; j--) {
-                        ipv6Tables[j-1].orderedAdd(lastIPv6[j],ipv6Tables[j]);
-                        ipv6Tables[j] = LookupTableBuilder.newLookupTable(db);
+                    	
+                        ipv6Tables[j-1].orderedAdd(lastIPv6[j-1],ipv6Tables[j]);
+                        ipv6Tables[j] = RangeTableBuilder.newLookupTable(db);
                     }
+                    
                     break;
                 }
             }
+            
             ipv6Tables[3].orderedAdd(words[3],ipDetails);
             lastIPv6 = words;
         }

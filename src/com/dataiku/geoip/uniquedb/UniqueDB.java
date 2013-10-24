@@ -5,18 +5,12 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.zip.Adler32;
 
-// UniqueDB : In-memory hierarchical string datastore optimized for highly redundant data and fast access
-// - Supported types are 'integer', 'string', 'array' and 'struct' (the root node is an array)
-// - Arrays handle mixed element types
-// - No runtime type checking / bound checking / any checking
-// - Redundant subtrees are stored once (=> the UniqueDB is actually a DAG)
-// - Very simple memory layout from a JVM POV (1 UniqueDB = 1 array + 1 string)
+
 public final class UniqueDB {
 
-    public Array root() {
+    public Node root() {
         return root;
     }
-    
 	
     // Write the UniqueDB to a DataOutputStream
 	public void writeToStream(DataOutputStream dos) throws IOException {
@@ -94,14 +88,14 @@ public final class UniqueDB {
 	}
 
 	public UniqueDB(String data, int[] meta) {
-	    this.root = new Array(this, meta[0]);
+	    this.root = new Node(this, meta[0]);
 	    this.data = data;
 	    this.meta = meta;
 	}
 	
-	final private Array root;
-	final String data;
-    final int[] meta;
+	final private Node root;
+	final protected String data;
+    final protected int[] meta;
     
 	private static final int VERSION_ID = 1;
 	private static final int UDB_MARKER = 1433486402;

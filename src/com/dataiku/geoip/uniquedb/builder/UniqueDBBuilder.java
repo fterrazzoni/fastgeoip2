@@ -7,19 +7,19 @@ import com.dataiku.geoip.uniquedb.UniqueDB;
 // UniqueDBBuilder : UniqueDB construction
 public final class UniqueDBBuilder {
 
-    StringBuilder data;
-    GrowableIntArray meta;
-    final  HashMap<Object, Integer> map;
+    protected StringBuilder data;
+    protected GrowableIntArray meta;
+    protected HashMap<Object, Integer> map;
      
 	// Create a new builder
 	public UniqueDBBuilder() {
 	    
-	    this.data = new StringBuilder();
-	    this.meta = new GrowableIntArray();
-	    this.map = new HashMap<Object,Integer>();
+		meta = new GrowableIntArray();
 	    meta.add(-1);
 	    
-		root = NodeBuilder.newArray(this);
+	    data = new StringBuilder();
+	    map = new HashMap<Object,Integer>();
+		root = new NodeBuilder(this);
 		
 	}
 
@@ -32,13 +32,11 @@ public final class UniqueDBBuilder {
 			meta.add(root.storage.get(i));
 		}
 		meta.set(0, index);
-
 		String nativeData = this.data.toString();
 		int[] nativeMeta = new int[meta.size()];
 		for (int i = 0; i < nativeMeta.length; i++) {
 			nativeMeta[i] = meta.get(i);
 		}
-
 		return new UniqueDB(nativeData, nativeMeta);
 	}
 	

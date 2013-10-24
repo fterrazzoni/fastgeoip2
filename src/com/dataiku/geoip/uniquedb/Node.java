@@ -1,6 +1,6 @@
 package com.dataiku.geoip.uniquedb;
 
-public class Array  {
+public class Node  {
 
     final private UniqueDB db;
     final private int offset;
@@ -19,12 +19,12 @@ public class Array  {
 	// Get the node at the position 'index' of the current node
 	// If the element is not an array or if the index doesn't exist
 	// => undefined behavior
-	public Array getNode(int index) {
+	public Node getNode(int index) {
 			int identifier = db.meta[offset + index];
 			if (identifier == -1) {
 				return null;
 			} else {
-				return new Array(db, identifier);
+				return new Node(db, identifier);
 			}
 	}
 
@@ -48,14 +48,10 @@ public class Array  {
 		return db.meta[offset - 1];
 	}
 
-	Array(UniqueDB db, int offset) {
+	protected Node(UniqueDB db, int offset) {
         this.db = db;
         this.offset = offset;
 	}
-	
-	protected Array(Array array) {
-	    db = array.db;
-        offset = array.offset;
-	}
+
 
 }

@@ -1,15 +1,20 @@
 package com.dataiku.geoip.uniquedb.builder;
 
 
-
 public class NodeBuilder extends Buildable {
     
-    final protected boolean storeSize;
-    final protected GrowableIntArray storage;
+    final protected GrowableIntArray storage = new GrowableIntArray();
+	private boolean deduplicate=true;
+	private boolean storeSize=true;
     
     public NodeBuilder add(NodeBuilder array) {
         
-        Integer index = getDB().map.get(array.storage);
+        Integer index = null;
+        
+        if(deduplicate) {
+        	index = getDB().map.get(array.storage);
+        }
+        
         if (index == null) {
             if(array.storeSize) {
                 getDB().meta.add(array.storage.size());
@@ -18,15 +23,27 @@ public class NodeBuilder extends Buildable {
             for(int i = 0 ; i < array.storage.size() ;i++) {
                 getDB().meta.add(array.storage.get(i));
             }
-            getDB().map.put(array.storage.clone(),index);
+            
+            if(deduplicate) {
+            	getDB().map.put(array.storage.clone(),index);
+            }
         }
         storage.add(index);
         
         return this;
     }
-
     
-    final public NodeBuilder add(Buildable b) {
+	public NodeBuilder setStoreSize(boolean v) {
+		storeSize=v;
+		return this;
+	}
+	
+	public NodeBuilder setDeduplication(boolean v) {
+		deduplicate=v;
+		return this;
+	}
+    
+    public NodeBuilder add(Buildable b) {
         if(b!=null) {
             add(b.build());
         } else {
@@ -34,8 +51,12 @@ public class NodeBuilder extends Buildable {
         }
         return this;
     }
+    
+    public int size() {
+    	return storage.size();
+    }
 
-	final public NodeBuilder add(String string) {
+	public NodeBuilder add(String string) {
 
 		if (string == null) {
 			storage.add(-1);
@@ -55,23 +76,14 @@ public class NodeBuilder extends Buildable {
 		return this;
 	}
 
-	final public NodeBuilder add(int value) {
+	public NodeBuilder add(int value) {
 		storage.add(value);
 		return this;
 	}
-	
-	private NodeBuilder(UniqueDBBuilder db, boolean storeSize) {
+
+
+	public NodeBuilder(UniqueDBBuilder db) {
 	    super(db);
-        this.storeSize = storeSize;
-        this.storage = new GrowableIntArray();
-	}
-	
-	public static NodeBuilder newArray(UniqueDBBuilder db) {
-	    return new NodeBuilder(db,true);
-	}
-	
-	public static NodeBuilder newStruct(UniqueDBBuilder db) {
-	    return new NodeBuilder(db,false);
 	}
 
     @Override

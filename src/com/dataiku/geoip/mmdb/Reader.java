@@ -7,16 +7,12 @@ package com.dataiku.geoip.mmdb;
 
 import java.io.Closeable;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -105,7 +101,6 @@ public final class Reader implements Closeable {
     
     int previousRecord;
     
-
     // Get the splits between IPv4 ranges 
     // Warning : this method doesn't exist in the official MaxMind DB reader
     public List<InetAddress> getRanges(int bitLength) {
@@ -115,12 +110,11 @@ public final class Reader implements Closeable {
             List<InetAddress> ips = new ArrayList<InetAddress>();
 
             int record = startNode(bitLength);
-            System.out.println("Start="+record);
+            
             previousRecord = -1;
             visitorHelper(record, 0, 0, new byte[bitLength/8], ips);
             visitorHelper(record, 1, 0, new byte[bitLength/8], ips);
-            
-            
+
             return ips;
 
         } catch (Exception e) {
@@ -130,69 +124,33 @@ public final class Reader implements Closeable {
 
     }
     
-    // Recursive helper for getRanges()
-    // Warning : this method doesn't exist in the official MaxMind DB reader
-    private void visitorHelper(int record, int bit, int depth, byte ip[],
-            List<InetAddress> ips) throws InvalidDatabaseException,
-            UnknownHostException {
+	// Recursive helper for getRanges()
+	// Warning : this method doesn't exist in the official MaxMind DB reader
+	private void visitorHelper(int record, int bit, int depth, byte ip[], List<InetAddress> ips)
+			throws InvalidDatabaseException, UnknownHostException {
 
-        
-        record = this.readNode(record, bit);
-        if (record < this.metadata.nodeCount) {
-            
-            ip[depth/8] |= (bit<<(7-depth%8));
-            visitorHelper(record, 0, depth + 1, ip, ips);
-            visitorHelper(record, 1, depth + 1, ip, ips);
-            ip[depth/8] &= ~(bit<<(7-depth%8));
-            
-        } else {
-            
-            if (record != previousRecord) {
-                ips.add(Inet6Address.getByAddress(ip));
-            }
-            previousRecord = record;
-        }
+		record = this.readNode(record, bit);
 
-    }
+		ip[depth / 8] |= (bit << (7 - depth % 8));
+
+		if (record < this.metadata.nodeCount) {
+
+			visitorHelper(record, 0, depth + 1, ip, ips);
+			visitorHelper(record, 1, depth + 1, ip, ips);
+
+		} else {
+
+			if (record != previousRecord) {
+				ips.add(Inet6Address.getByAddress(ip));
+				
+			}
+			previousRecord = record;
+		}
+
+		ip[depth / 8] &= ~(bit << (7 - depth % 8));
+
+	}
     
-    
-    
-    
-
-    // Dump the database to a text file
-    // Warning : this method doesn't exist in the official MaxMind DB reader
-    public void dump(File output) throws FileNotFoundException {
-
-        System.out.println("Dumping GeoIP database...");
-
-        FileOutputStream ofs = new FileOutputStream(output);
-        PrintStream stro = new PrintStream(ofs);
-        List<InetAddress> addresses = getRanges(32);
-        int ok = 0;
-        int bad = 0;
-        for (InetAddress addr : addresses) {
-            try {
-                JsonNode node = get(addr);
-                if (node != null) {
-                    stro.print(addr.toString() + "\t" + node.toString() + "\n");
-                    ok++;
-                } else {
-                    stro.print(addr.toString() + "\tNULL\n");
-                    bad++;
-                }
-            } catch (Exception e) {
-                System.out.println("This should NEVER happen !");
-            }
-            
-
-            if ((ok+bad) % 10000 == 0) {
-                System.out.println("Processed " + (ok+bad) + "/" + addresses.size()+ " ("+bad+" null records)");
-            }
-        }
-        stro.close();
-        System.out.println("Dump success!");
-    }
-
     private int findAddressInTree(InetAddress address)
             throws InvalidDatabaseException {
         byte[] rawAddress = address.getAddress();

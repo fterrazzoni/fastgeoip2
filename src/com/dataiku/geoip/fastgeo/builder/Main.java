@@ -2,47 +2,38 @@ package com.dataiku.geoip.fastgeo.builder;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
 import com.dataiku.geoip.fastgeo.FastGeoIP2;
-import com.dataiku.geoip.fastgeo.InvalidFastGeoIP2DatabaseException;
-import com.dataiku.geoip.fastgeo.InvalidIPAddress;
-import com.dataiku.geoip.fastgeo.LookupTable;
 import com.dataiku.geoip.fastgeo.FastGeoIP2.Result;
 import com.dataiku.geoip.fastgeo.FastGeoIP2.Result.Subdivision;
+import com.dataiku.geoip.fastgeo.InvalidFastGeoIP2DatabaseException;
+import com.dataiku.geoip.fastgeo.InvalidIPAddress;
 import com.dataiku.geoip.fastgeo.builder.FastGeoIP2Builder.Listener;
 import com.dataiku.geoip.mmdb.Reader;
-import com.dataiku.geoip.uniquedb.UniqueDB;
-import com.dataiku.geoip.uniquedb.builder.UniqueDBBuilder;
 import com.fasterxml.jackson.databind.JsonNode;
 
-public class Main { 
+public class Main {
 
 	// 1st argument : path to the GeoLite2 DB
 	// 2nd argument : path to the output FastGeoIP2 DB
 	public static void main(String[] args) throws IOException, InvalidFastGeoIP2DatabaseException, InvalidIPAddress {
 
-	  
-	    
-	    
-	    
-		convert(args[0], args[1]);
-		//bench(args[0], args[1]);
-
+		//convert(args[0], args[1]);
+		bench(args[0], args[1]);
+		
 	}
 
-	public static void convert(String mmdbInputFilename,
-			String fgdbOutputFilename) throws IOException {
+	public static void convert(String mmdbInputFilename, String fgdbOutputFilename) throws IOException {
 
 		// Convert the DB
 		System.out.println("Convert GeoLite2 MMDB -> FastGeoIP2 FGDB...");
 		System.out.println("MaxMind GeoLite database : " + mmdbInputFilename);
 		System.out.println("Output FastGeoIP database : " + fgdbOutputFilename);
-		
+
 		File inputMMDB = new File(mmdbInputFilename);
 		File outputFGDB = new File(fgdbOutputFilename);
 
@@ -52,24 +43,22 @@ public class Main {
 			@Override
 			public void progress(int processed, int total) {
 				if (processed % 150000 == 0) {
-					System.out.println("Building FastGeoIP2... " + 100
-							* processed / total + "%   (" + processed
-							+ " IP ranges processed)");
+					System.out.println("Building FastGeoIP2... " + 100 * processed / total + "%   ("
+							+ processed + " IP ranges processed)");
 				}
 			}
 		});
 
 		inMemoryDB.saveToFile(outputFGDB);
 		System.out.println("FastGeoIP2 database built successfully !");
-		System.out.println("Database size (on disk) : " + outputFGDB.length()
-				/ 1024 + "KB");
+		System.out.println("Database size (on disk) : " + outputFGDB.length() / 1024 + "KB");
 
 	}
 
 	// Run a perf benchmark FastGeoIP2 VS MaxMind GeoIP2 API
 	// Check that they both produces the same output!
 	static public void bench(String mmdbFilename, String fgdbFilename)
-			throws  InvalidFastGeoIP2DatabaseException, IOException, InvalidIPAddress {
+			throws InvalidFastGeoIP2DatabaseException, IOException, InvalidIPAddress {
 
 		// Benchmark the generated DB
 		System.out.println("Run benchmark...");
@@ -78,24 +67,24 @@ public class Main {
 		Reader mmdb = new Reader(new File(mmdbFilename));
 
 		// Take all the split addresses to make sure we test everything
-		List<InetAddress> addressesInet = mmdb.getRanges(32);
-		
+		List<InetAddress> addressesInet = mmdb.getRanges(128);
+
 		// Add some "pathological" addresses to make sure they work as expected
 		addressesInet.add(InetAddress.getByName("0.0.0.0"));
 		addressesInet.add(InetAddress.getByName("255.255.255.255"));
 
 		// Generate random IP addresses
-		int nbRandomIPs = 100000;
+		int nbRandomIPs = 20000;
 		Random rd = new Random(123);
 		for (int k = 0; k < nbRandomIPs; k++) {
-			String ip = rd.nextInt(256) + "." + rd.nextInt(256) + "."
-					+ rd.nextInt(256) + "." + rd.nextInt(256);
+			String ip = rd.nextInt(256) + "." + rd.nextInt(256) + "." + rd.nextInt(256) + "."
+					+ rd.nextInt(256);
 			addressesInet.add(InetAddress.getByName(ip));
 		}
-		
+
 		List<String> addressesString = new ArrayList<String>();
-		
-		for(InetAddress addr : addressesInet) {
+
+		for (InetAddress addr : addressesInet) {
 			addressesString.add(addr.getHostAddress());
 		}
 
@@ -109,12 +98,12 @@ public class Main {
 
 			long T1 = System.currentTimeMillis();
 
-			for (String addr : addressesString) {
-				
+			for (InetAddress addr : addressesInet) {
+
 				Result res = fgdb.find(addr);
-				
+
 				if (res != null) {
-					
+
 					hashFGDB = 31 * hashFGDB + res.getLatitude().hashCode();
 					hashFGDB = 31 * hashFGDB + res.getLongitude().hashCode();
 					hashFGDB = 31 * hashFGDB + res.getTimezone().hashCode();
@@ -122,86 +111,51 @@ public class Main {
 					hashFGDB = 31 * hashFGDB + res.getCountry().hashCode();
 					hashFGDB = 31 * hashFGDB + res.getCountryCode().hashCode();
 					hashFGDB = 31 * hashFGDB + res.getContinent().hashCode();
-					hashFGDB = 31 * hashFGDB
-							+ res.getContinentCode().hashCode();
+					hashFGDB = 31 * hashFGDB + res.getContinentCode().hashCode();
 					hashFGDB = 31 * hashFGDB + res.getPostalCode().hashCode();
 
 					for (Subdivision region : res.getSubdivisions()) {
-					    hashFGDB = 31 * hashFGDB + region.name.hashCode();
-					    hashFGDB = 31 * hashFGDB + region.code.hashCode();
+						hashFGDB = 31 * hashFGDB + region.name.hashCode();
+						hashFGDB = 31 * hashFGDB + region.code.hashCode();
 					}
-                    
+
 				}
 
 			}
-
+			 
 			long T2 = System.currentTimeMillis();
-			
+
 			for (InetAddress addr : addressesInet) {
-
+				
 				JsonNode n = mmdb.get(addr);
-				Result res = fgdb.find(addr.getHostAddress());
 				
-				
-				if (n != null && res!=null) {
-					if(!res.getLatitude().equals(n.path("location").path("latitude").asText())) {
-					    System.out.println(res.getCity());
-						System.out.println(addr);
-					}
-					
-					hashMMDB = 31
-							* hashMMDB
-							+ n.path("location").path("latitude").asText()
-									.hashCode();
 
-					hashMMDB = 31
-							* hashMMDB
-							+ n.path("location").path("longitude").asText()
-									.hashCode();
+				if (n != null) {
 
-					hashMMDB = 31
-							* hashMMDB
-							+ n.path("location").path("time_zone").asText()
-									.hashCode();
+					hashMMDB = 31 * hashMMDB + n.path("location").path("latitude").asText().hashCode();
 
-					hashMMDB = 31
-							* hashMMDB
-							+ n.path("city").path("names").path("en").asText()
-									.hashCode();
+					hashMMDB = 31 * hashMMDB + n.path("location").path("longitude").asText().hashCode();
 
-					hashMMDB = 31
-							* hashMMDB
-							+ n.path("country").path("names").path("en")
-									.asText().hashCode();
-					hashMMDB = 31
-							* hashMMDB
-							+ n.path("country").path("iso_code").asText()
-									.hashCode();
+					hashMMDB = 31 * hashMMDB + n.path("location").path("time_zone").asText().hashCode();
 
-					hashMMDB = 31
-							* hashMMDB
-							+ n.path("continent").path("names").path("en")
-									.asText().hashCode();
+					hashMMDB = 31 * hashMMDB + n.path("city").path("names").path("en").asText().hashCode();
 
-					hashMMDB = 31
-							* hashMMDB
-							+ n.path("continent").path("iso_code").asText()
-									.hashCode();
+					hashMMDB = 31 * hashMMDB + n.path("country").path("names").path("en").asText().hashCode();
+					hashMMDB = 31 * hashMMDB + n.path("country").path("iso_code").asText().hashCode();
+
 					hashMMDB = 31 * hashMMDB
-							+ n.path("postal").path("code").asText().hashCode();
+							+ n.path("continent").path("names").path("en").asText().hashCode();
+
+					hashMMDB = 31 * hashMMDB + n.path("continent").path("iso_code").asText().hashCode();
+					hashMMDB = 31 * hashMMDB + n.path("postal").path("code").asText().hashCode();
 
 					JsonNode subdivisions = n.path("subdivisions");
 					for (int i = 0; i < subdivisions.size(); i++) {
 
-						hashMMDB = 31
-								* hashMMDB
-								+ subdivisions.get(i).path("names").path("en")
-										.asText().hashCode();
-						
-						hashMMDB = 31
-                                * hashMMDB
-                                + subdivisions.get(i).path("iso_code")
-                                        .asText().hashCode();
+						hashMMDB = 31 * hashMMDB
+								+ subdivisions.get(i).path("names").path("en").asText().hashCode();
+
+						hashMMDB = 31 * hashMMDB + subdivisions.get(i).path("iso_code").asText().hashCode();
 
 					}
 

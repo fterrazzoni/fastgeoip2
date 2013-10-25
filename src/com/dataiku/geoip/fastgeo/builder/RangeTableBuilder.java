@@ -9,36 +9,40 @@ import com.dataiku.geoip.uniquedb.builder.UniqueDBBuilder;
 public class RangeTableBuilder extends Buildable {
 
     NodeBuilder nodeTable;
-    GrowableIntArray keyTempTable;
+    NodeBuilder keyTable;
+    int keySize;
     
-    public RangeTableBuilder orderedAdd(int key, Buildable node) {
+    
+    public RangeTableBuilder orderedAdd(int keys[], Buildable node) {
     	
-        keyTempTable.add(key);
+        for(int i = 0 ; i < keySize ; i++ ){
+            keyTable.add(keys[i]);
+        }
+        
         nodeTable.add(node);
         
         return this;
     }
+    public int size() {
+        return nodeTable.size();
+    }
     
-    public RangeTableBuilder(UniqueDBBuilder db) {
+    public RangeTableBuilder(UniqueDBBuilder db, int keySize) {
     	
         super(db);
-        
-        keyTempTable = new GrowableIntArray();
-        nodeTable = new NodeBuilder(db);
+        this.keySize = keySize;
+        this.keyTable = new NodeBuilder(db);
+        this.nodeTable = new NodeBuilder(db);
     }
     
     @Override
     public NodeBuilder build() {
         
-        // We work on a copy because the build() operation 
-        // should not mutate the current object
-    	NodeBuilder table  = nodeTable.clone();
-    	
-    	for(int i = 0 ; i < keyTempTable.size(); i++) {
-    	    table.add(keyTempTable.get(i));
-    	}
+        return new NodeBuilder(getDatabase())
+                    .add(keySize)
+                    .add(keyTable)
+                    .add(nodeTable);
         
-        return  table;
     }
     
 }

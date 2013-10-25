@@ -25,8 +25,6 @@ public class Main {
 		//convert(args[0], args[1]);
 		bench(args[0], args[1]);
 		
-		//System.out.println(new IPAddress("2001:0db8:0:0:0000:ff00:0042:8329"));
-		
 	} 
 
 	public static void convert(String mmdbInputFilename, String fgdbOutputFilename) throws IOException {
@@ -68,6 +66,7 @@ public class Main {
 		FastGeoIP2 fgdb = new FastGeoIP2(new File(fgdbFilename));
 		Reader mmdb = new Reader(new File(mmdbFilename));
 
+		
 		// Take all the split addresses to make sure we test everything
 		List<InetAddress> addressesInet = mmdb.getRanges(128);
 
@@ -76,7 +75,7 @@ public class Main {
 		addressesInet.add(InetAddress.getByName("255.255.255.255"));
 
 		// Generate random IP addresses
-		int nbRandomIPs = 20000;
+		int nbRandomIPs = 1000;
 		Random rd = new Random(123);
 		for (int k = 0; k < nbRandomIPs; k++) {
 			String ip = rd.nextInt(256) + "." + rd.nextInt(256) + "." + rd.nextInt(256) + "."
@@ -126,7 +125,7 @@ public class Main {
 			}
 			 
 			long T2 = System.currentTimeMillis();
-			    
+			
 			for (InetAddress addr : addressesInet) {
 				
 				JsonNode n = mmdb.get(addr);

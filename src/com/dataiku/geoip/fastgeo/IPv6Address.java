@@ -240,10 +240,19 @@ public class IPv6Address {
 	
 	// It is an IPv4-mapped IPv6 address ?
 	public boolean isIPv4() {
-	    return storage[0] == Integer.MIN_VALUE 
-	            && storage[1] == Integer.MIN_VALUE 
-	            && storage[2] == Integer.MIN_VALUE+0x0000FFFF;
-	    
-	}
+        return storage[0] == Integer.MIN_VALUE 
+                && storage[1] == Integer.MIN_VALUE 
+                && storage[2] == Integer.MIN_VALUE+0x0000FFFF;
+        
+    }
+	
+	// It is an IPv4-mapped IPv6 address using deprecated form ?
+	public boolean isIPv4Deprecated() {
+        return storage[0] == Integer.MIN_VALUE 
+                && storage[1] == Integer.MIN_VALUE 
+                && storage[2] == Integer.MIN_VALUE;
+        
+    }
+    
 
 }

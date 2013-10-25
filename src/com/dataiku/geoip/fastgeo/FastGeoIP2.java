@@ -136,20 +136,13 @@ public class FastGeoIP2 {
         
         Node node = null;
         
-        if(addr.isIPv4()) {
+        if(addr.isIPv4() || addr.isIPv4Deprecated()) {
             
-            RangeTable table = ipv4Table;
-            node = table.lookup(ip[3]);
+            node = ipv4Table.lookup(new int[] { ip[3] });
             
         } else {
         
-            RangeTable table = ipv6Table;
-            
-            table = new RangeTable(table.lookup(ip[0]));
-            table = new RangeTable(table.lookup(ip[1]));
-            table = new RangeTable(table.lookup(ip[2]));
-            
-            node = table.lookup(ip[3]);
+            node = ipv6Table.lookup(new int[] { ip[0],ip[1] });
         
         } 
         
@@ -167,19 +160,17 @@ public class FastGeoIP2 {
         this.database = db;
         
         // check version
-        if (db.root().size() != 3 
+        if (db.root().size() != 4 
                 || db.root().getInteger(0) != FGDB_MARKER 
                 || db.root().getInteger(1) != VERSION_ID) {
             throw new InvalidDatabaseException("Cannot load FastGeoIP2 database (invalid database or incompatible version)");
         }
         
-        // Load IPv6 table
-        ipv6Table = new RangeTable(db.root().getNode(2));
+        ipv4Table = new RangeTable(db.root().getNode(2));
+        ipv6Table = new RangeTable(db.root().getNode(3));
         
-        // Load IPv4 table
-        ipv4Table = new RangeTable(ipv6Table.lookup(Integer.MIN_VALUE));
-        ipv4Table = new RangeTable(ipv4Table.lookup(Integer.MIN_VALUE));
-        ipv4Table = new RangeTable(ipv4Table.lookup(Integer.MIN_VALUE+0x0000FFFF));
+        
+        
         
     }
 

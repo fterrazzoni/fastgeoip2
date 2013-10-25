@@ -9,6 +9,7 @@ import com.dataiku.geoip.fastgeo.FastGeoIP2;
 import com.dataiku.geoip.mmdb.Reader;
 import com.dataiku.geoip.uniquedb.InvalidDatabaseException;
 import com.dataiku.geoip.uniquedb.UniqueDB;
+import com.dataiku.geoip.uniquedb.builder.Buildable;
 import com.dataiku.geoip.uniquedb.builder.NodeBuilder;
 import com.dataiku.geoip.uniquedb.builder.UniqueDBBuilder;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -32,7 +33,7 @@ public class FastGeoIP2Builder {
 
     // Start the conversion procedure
     FastGeoIP2 build(Listener listener) throws IOException {
-
+        
         db = new UniqueDBBuilder();
         
         try (Reader geoliteDatabase = new Reader(geoliteFile)) {
@@ -115,25 +116,25 @@ public class FastGeoIP2Builder {
                 String name = subdivisions.get(i).path("names").path("en").asText();
                 String code = subdivisions.get(i).path("iso_code").asText();
 
-                regions.add(new NodeBuilder(db).setStoreSize(false).add(name).add(code));
+                regions.add(new NodeBuilder(db).storeSize(false).add(name).add(code));
             }
 
             // If you modify this tree, don't forget to update the getters in
             // FastGeoIP2 !
-            ipDetails =  new NodeBuilder(db).setStoreSize(false)
+            ipDetails =  new NodeBuilder(db).storeSize(false)
 
                     .add(latitude)
                     .add(longitude)
                     .add(postalcode)
                     .add(city)
                     .add(
-                    		 new NodeBuilder(db).setStoreSize(false)
+                    		 new NodeBuilder(db).storeSize(false)
                             .add(regions)
                             .add(country)
                             .add(countrycode)
                             .add(timezone)
                             .add(
-                            		 new NodeBuilder(db).setStoreSize(false)
+                            		 new NodeBuilder(db).storeSize(false)
                                     .add(continent)
                                     .add(continentcode)
                              )
@@ -142,12 +143,6 @@ public class FastGeoIP2Builder {
         }
         
         
-        try {
-			//Thread.sleep(60);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
         if(words.length == 4) {
         	
             if(lastIPv6==null) {

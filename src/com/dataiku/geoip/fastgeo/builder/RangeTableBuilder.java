@@ -9,15 +9,19 @@ import com.dataiku.geoip.uniquedb.builder.UniqueDBBuilder;
 public class RangeTableBuilder extends Buildable {
 
     NodeBuilder nodeTable;
+    Buildable lastInsert;
     GrowableIntArray keyTempTable;
     
     public RangeTableBuilder orderedAdd(int key, Buildable node) {
-    	
+        
+        
         keyTempTable.add(key);
         nodeTable.add(node);
+        lastInsert=node;
         
         return this;
     }
+    
     
     public RangeTableBuilder(UniqueDBBuilder db) {
     	
@@ -30,15 +34,24 @@ public class RangeTableBuilder extends Buildable {
     @Override
     public NodeBuilder build() {
         
-        // We work on a copy because the build() operation 
-        // should not mutate the current object
-    	NodeBuilder table  = nodeTable.clone();
-    	
-    	for(int i = 0 ; i < keyTempTable.size(); i++) {
-    	    table.add(keyTempTable.get(i));
-    	}
         
-        return  table;
+        if(keyTempTable.size()!=1) {
+            // We work on a copy because the build() operation 
+            // should not mutate the current object
+        	NodeBuilder table  = nodeTable.clone();
+        	
+        	for(int i = 0 ; i < keyTempTable.size(); i++) {
+        	    table.add(keyTempTable.get(i));
+        	}
+        	return  table;
+        	
+        } else {
+            NodeBuilder table  = nodeTable.clone();
+            table.add(lastInsert.build().setFlag(true));
+            return table;
+            
+        }
+        
     }
     
 }

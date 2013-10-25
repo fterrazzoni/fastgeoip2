@@ -14,9 +14,16 @@ public class RangeTable {
     // Find the 'key' in the table using a simple binary search 
 	public Node lookup(int key) {
 
-	    if(mainTable == null || mainTable.size()==0) {
+	    if(mainTable == null) {
 	        return null;
 	    }
+	    
+	    if(mainTable.flag()) {
+	        return mainTable;
+	    }
+	    
+	    if(mainTable.size()==0)
+	        return null;
 	    
 	    int tableSize = mainTable.size()/2;
 		int minIdx = 0;

@@ -1,11 +1,18 @@
 package com.dataiku.geoip.uniquedb.builder;
 
 
-public class NodeBuilder extends Buildable {
+public final class NodeBuilder extends Buildable {
     
     protected GrowableIntArray storage = new GrowableIntArray();
-	private boolean deduplicate=true;
-	private boolean storeSize=true;
+    private boolean deduplicate=true;
+    private boolean storeSize=true;
+	private boolean flag=false;
+	
+    
+    public NodeBuilder setFlag(boolean v) {
+        flag = v;
+        return this;
+    }
     
     public NodeBuilder add(NodeBuilder array) {
         
@@ -21,7 +28,9 @@ public class NodeBuilder extends Buildable {
         
         if (index == null) {
             if(array.storeSize) {
-                getDatabase().meta.add(array.storage.size());
+                
+                int m = array.storage.size();
+                getDatabase().meta.add(m);
             }
             index = getDatabase().meta.size();
             for(int i = 0 ; i < array.storage.size() ;i++) {
@@ -32,12 +41,17 @@ public class NodeBuilder extends Buildable {
             	getDatabase().map.put(array.storage.clone(),index);
             }
         }
+        if(array.flag) {
+            index = index | (1<<31);
+        } else {
+            index = index & ~(1<<31);
+        }
         storage.add(index);
         
         return this;
     }
     
-	public NodeBuilder setStoreSize(boolean v) {
+	public NodeBuilder storeSize(boolean v) {
 		storeSize=v;
 		return this;
 	}
@@ -94,10 +108,9 @@ public class NodeBuilder extends Buildable {
 	}
 
     @Override
-    protected NodeBuilder build() {
+    public NodeBuilder build() {
         return this;
     }
-
     
     @Override
     public NodeBuilder clone()  {
@@ -110,5 +123,9 @@ public class NodeBuilder extends Buildable {
         this.storeSize = storeSize;
         this.deduplicate = deduplicate;
     }
-  
+    
+    public int getInteger(int i) {
+        return storage.get(i);
+    }
+    
 }

@@ -11,9 +11,9 @@ import com.dataiku.geoip.fastgeo.FastGeoIP2;
 import com.dataiku.geoip.fastgeo.FastGeoIP2.Result;
 import com.dataiku.geoip.fastgeo.FastGeoIP2.Result.Subdivision;
 import com.dataiku.geoip.fastgeo.IPv6Address;
-import com.dataiku.geoip.uniquedb.InvalidDatabaseException;
 import com.dataiku.geoip.fastgeo.builder.FastGeoIP2Builder.Listener;
 import com.dataiku.geoip.mmdb.Reader;
+import com.dataiku.geoip.uniquedb.InvalidDatabaseException;
 import com.fasterxml.jackson.databind.JsonNode;
 
 public class Main {
@@ -22,7 +22,7 @@ public class Main {
 	// 2nd argument : path to the output FastGeoIP2 DB
 	public static void main(String[] args) throws IOException, InvalidDatabaseException {
 
-		//convert(args[0], args[1]);
+		convert(args[0], args[1]);
 		bench(args[0], args[1]);
 		
 		//System.out.println(new IPAddress("2001:0db8:0:0:0000:ff00:0042:8329"));
@@ -91,7 +91,7 @@ public class Main {
 		}
 
 		System.out.println("Benchmark size : " + addressesInet.size() + " IPs");
-
+int cnt = 0;
 		int nbPasses = 10;
 		for (int k = 0; k < nbPasses; k++) {
 
@@ -101,8 +101,12 @@ public class Main {
 			long T1 = System.currentTimeMillis();
 
 			for (String addr : addressesString) {
-
-				Result res = fgdb.find(new IPv6Address(addr));
+			    
+			    IPv6Address ipv6 = new IPv6Address(addr);
+			    if(!ipv6.isIPv4()) {
+			        cnt++;
+			    }
+				Result res = fgdb.find(ipv6);
 
 				if (res != null) {
 				    
@@ -124,7 +128,7 @@ public class Main {
 				}
 
 			}
-			 
+			 System.out.println("cnt="+cnt);
 			long T2 = System.currentTimeMillis();
 			    
 			for (InetAddress addr : addressesInet) {

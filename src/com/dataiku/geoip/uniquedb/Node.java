@@ -4,6 +4,7 @@ public class Node  {
 
     final private UniqueDB db;
     final private int offset;
+    final private boolean flag;
     
     public UniqueDB getDB() {
         return db;
@@ -20,11 +21,15 @@ public class Node  {
 	// If the element is not an array or if the index doesn't exist
 	// => undefined behavior
 	public Node getNode(int index) {
-			int identifier = db.meta[offset + index];
-			if (identifier == -1) {
+	        
+			int pointer = db.meta[offset + index];
+			boolean ptrflag = (pointer & (1<<31))!=0;
+			pointer &= ~(1<<31);
+			
+			if (pointer == -1) {
 				return null;
 			} else {
-				return new Node(db, identifier);
+				return new Node(db, pointer,ptrflag);
 			}
 	}
 
@@ -33,7 +38,7 @@ public class Node  {
 	// => undefined behavior
 	public String getString(int index) {
 		
-		int identifier = db.meta[offset + index];
+		int identifier = db.meta[offset + index] & ~(1<<31);
 		if (identifier == -1)
 			return null;
 		
@@ -47,10 +52,15 @@ public class Node  {
 	public int size() {
 		return db.meta[offset - 1];
 	}
+	
+	public boolean flag() {
+	    return flag;
+	}
 
-	protected Node(UniqueDB db, int offset) {
+	protected Node(UniqueDB db, int offset,boolean flag) {
         this.db = db;
         this.offset = offset;
+        this.flag = flag;
 	}
 
 

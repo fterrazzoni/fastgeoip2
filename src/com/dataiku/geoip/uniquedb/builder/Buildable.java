@@ -8,10 +8,11 @@ public abstract class Buildable {
     protected Buildable(UniqueDBBuilder database) {
         this.database = database;
     }
-    protected UniqueDBBuilder getDatabase() {
+    
+    public UniqueDBBuilder getDatabase() {
         return database;
     }
     
-    protected abstract NodeBuilder build();
+    public abstract NodeBuilder build();
     
 }

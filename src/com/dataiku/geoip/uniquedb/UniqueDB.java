@@ -88,7 +88,7 @@ public final class UniqueDB {
 	}
 
 	public UniqueDB(String data, int[] meta) {
-	    this.root = new Node(this, meta[0]);
+	    this.root = new Node(this, meta[0],false);
 	    this.data = data;
 	    this.meta = meta;
 	}

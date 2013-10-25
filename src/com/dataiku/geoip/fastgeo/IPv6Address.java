@@ -242,7 +242,7 @@ public class IPv6Address {
 	public boolean isIPv4() {
 	    return storage[0] == Integer.MIN_VALUE 
 	            && storage[1] == Integer.MIN_VALUE 
-	            && storage[2] == Integer.MIN_VALUE+0x0000FFFF;
+	            && (storage[2] == Integer.MIN_VALUE+0x0000FFFF || storage[2] == Integer.MIN_VALUE);
 	    
 	}
 

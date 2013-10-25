@@ -17,7 +17,6 @@ import java.util.List;
 
 import com.dataiku.geoip.fastgeo.FastGeoIP2;
 import com.dataiku.geoip.fastgeo.IPAddress;
-import com.dataiku.geoip.fastgeo.InvalidIPAddress;
 import com.dataiku.geoip.fastgeo.builder.FastGeoIP2Builder;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -131,8 +130,8 @@ public final class Reader implements Closeable {
 	// Recursive helper for getRanges()
 	// Warning : this method doesn't exist in the official MaxMind DB reader
 	private void visitorHelper(int record, int bit, int depth, byte ip[], List<InetAddress> ips)
-			throws InvalidDatabaseException, UnknownHostException, InvalidIPAddress {
-
+			throws InvalidDatabaseException, UnknownHostException {
+		
 		record = this.readNode(record, bit);
 
 		ip[depth / 8] |= (bit << (7 - depth % 8));

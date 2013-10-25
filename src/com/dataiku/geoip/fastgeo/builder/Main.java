@@ -12,7 +12,6 @@ import com.dataiku.geoip.fastgeo.FastGeoIP2.Result;
 import com.dataiku.geoip.fastgeo.FastGeoIP2.Result.Subdivision;
 import com.dataiku.geoip.fastgeo.IPAddress;
 import com.dataiku.geoip.fastgeo.InvalidFastGeoIP2DatabaseException;
-import com.dataiku.geoip.fastgeo.InvalidIPAddress;
 import com.dataiku.geoip.fastgeo.builder.FastGeoIP2Builder.Listener;
 import com.dataiku.geoip.mmdb.Reader;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -21,10 +20,12 @@ public class Main {
 
 	// 1st argument : path to the GeoLite2 DB
 	// 2nd argument : path to the output FastGeoIP2 DB
-	public static void main(String[] args) throws IOException, InvalidFastGeoIP2DatabaseException, InvalidIPAddress {
+	public static void main(String[] args) throws IOException, InvalidFastGeoIP2DatabaseException {
 
 		convert(args[0], args[1]);
 		bench(args[0], args[1]);
+		
+		//System.out.println(new IPAddress("2001:0db8:0:0:0000:ff00:0042:8329"));
 		
 	}
 
@@ -59,7 +60,7 @@ public class Main {
 	// Run a perf benchmark FastGeoIP2 VS MaxMind GeoIP2 API
 	// Check that they both produces the same output!
 	static public void bench(String mmdbFilename, String fgdbFilename)
-			throws InvalidFastGeoIP2DatabaseException, IOException, InvalidIPAddress {
+			throws InvalidFastGeoIP2DatabaseException, IOException {
 
 		// Benchmark the generated DB
 		System.out.println("Run benchmark...");
@@ -129,7 +130,7 @@ public class Main {
 			for (InetAddress addr : addressesInet) {
 				
 				JsonNode n = mmdb.get(addr);
-				IPAddress a= new IPAddress(addr.getHostAddress());
+				
 				
 				if (n != null) {
 				    

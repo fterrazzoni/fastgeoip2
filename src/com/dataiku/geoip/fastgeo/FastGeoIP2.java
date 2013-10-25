@@ -8,10 +8,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,18 +26,15 @@ import com.dataiku.geoip.uniquedb.UniqueDB;
 // - Much faster than the GeoLite2 Java API (30x)
 public class FastGeoIP2 {
 
-
-    
-	// Instantiate a new FastGeoIP2 from a file
+    // Instantiate a new FastGeoIP2 from a file
     public FastGeoIP2(File file) throws InvalidDatabaseException {
 
         try (
 
-                FileInputStream fis = new FileInputStream(file);
+        FileInputStream fis = new FileInputStream(file);
                 BufferedInputStream bis = new BufferedInputStream(fis);
-                DataInputStream dis = new DataInputStream(bis)) 
-        {
-            
+                DataInputStream dis = new DataInputStream(bis)) {
+
             initialize(UniqueDB.loadFromStream(dis));
 
         } catch (IOException e) {
@@ -55,9 +48,6 @@ public class FastGeoIP2 {
         }
 
     }
-    
-
-    
 
     // Save the FastGeoIP2 database to a file
     public void saveToFile(File file) throws IOException {
@@ -66,13 +56,11 @@ public class FastGeoIP2 {
         BufferedOutputStream bos = new BufferedOutputStream(fos);
         DataOutputStream dos = new DataOutputStream(bos);
         try {
-            db.writeToStream(dos);
+            database.writeToStream(dos);
         } finally {
             dos.close();
         }
     }
-    
-    
 
     static final public class Result {
 
@@ -137,67 +125,69 @@ public class FastGeoIP2 {
 
     }
 
-
-    // Find the record index of an IP address in the lookup table (binary search)
-    /*private int findIndex(int queryIP) {
-    	
-    	int minIdx = 0;
-    	int maxIdx = ipTable.size()-1;
-    	
-    	while(minIdx <= maxIdx) {
-    		
-    		int midIdx = (minIdx+maxIdx) >>> 1;
-    		int currentIP = ipTable.getInteger(midIdx);
-    		
-    		if(currentIP<queryIP) {
-    			minIdx = midIdx+1;
-    		} else if(currentIP>queryIP) {
-    			maxIdx = midIdx-1;
-    		} else {
-    			return midIdx;
-    		}
-    	}
-
-    	return minIdx-1;
-    }*/
-
     // Construct a FastGeoIP2 using an already loaded UniqueDB
     public FastGeoIP2(UniqueDB db) throws InvalidDatabaseException {
         initialize(db);
     }
-    
-    public Result find(IPAddress addr) {
-    	
-    	Node node = db.root().getNode(2);
-    	int ip[] = addr.getIntRepresentation();
-    	for(int i = 0 ; i < 4 && node != null; i++) {
-    		node = new RangeTable(node).lookup(ip[i]);
-    	}
-    	
-    	if(node!=null) {
-	    	return new Result(node);
-    	} 
-    	
-    	return null;
-    	
-    }
-    
-    private void initialize(UniqueDB db) throws InvalidDatabaseException {
-        this.db = db;
+
+    public Result find(IPv6Address addr) {
+
+        int ip[] = addr.internalRepresentation();
         
-        if(db.root().size() != 3 || db.root().getInteger(0) != FGDB_MARKER || db.root().getInteger(1) != VERSION_ID) {
-        	throw new InvalidDatabaseException("Cannot load FastGeoIP2 database (invalid database or incompatible version)");
-        }
+        Node node = null;
+        
+        if(addr.isIPv4()) {
+            
+            RangeTable table = ipv4Table;
+            node = table.lookup(ip[3]);
+            
+        } else {
+        
+            RangeTable table = ipv6Table;
+            
+            table = new RangeTable(table.lookup(ip[0]));
+            table = new RangeTable(table.lookup(ip[1]));
+            table = new RangeTable(table.lookup(ip[2]));
+            
+            node = table.lookup(ip[3]);
+        
+        } 
+        
+        if(node != null) {
+            return new Result(node);
+        } 
+        
+        return null;
+
     }
 
+    private void initialize(UniqueDB db) throws InvalidDatabaseException {
+        
+        // save db
+        this.database = db;
+        
+        // check version
+        if (db.root().size() != 3 
+                || db.root().getInteger(0) != FGDB_MARKER 
+                || db.root().getInteger(1) != VERSION_ID) {
+            throw new InvalidDatabaseException("Cannot load FastGeoIP2 database (invalid database or incompatible version)");
+        }
+        
+        // Load IPv6 table
+        ipv6Table = new RangeTable(db.root().getNode(2));
+        
+        // Load IPv4 table
+        ipv4Table = new RangeTable(ipv6Table.lookup(Integer.MIN_VALUE));
+        ipv4Table = new RangeTable(ipv4Table.lookup(Integer.MIN_VALUE));
+        ipv4Table = new RangeTable(ipv4Table.lookup(Integer.MIN_VALUE+0x0000FFFF));
+        
+    }
 
+    private RangeTable ipv6Table;
+    private RangeTable ipv4Table;
+    private UniqueDB database;
     
-    
-    private UniqueDB db;
-    private Node dataTable;
-    private Node ipTable;
-
-	public static final int VERSION_ID = 2;
-	public static final int FGDB_MARKER = 1181889348;
+    public static final int VERSION_ID = 2;
+    public static final int FGDB_MARKER = 1181889348;
 
 }

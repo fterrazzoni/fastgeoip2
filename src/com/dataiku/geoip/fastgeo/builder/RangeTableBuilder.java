@@ -1,38 +1,44 @@
 package com.dataiku.geoip.fastgeo.builder;
 
+
+import com.dataiku.geoip.uniquedb.builder.GrowableIntArray;
 import com.dataiku.geoip.uniquedb.builder.NodeBuilder;
 import com.dataiku.geoip.uniquedb.builder.Buildable;
 import com.dataiku.geoip.uniquedb.builder.UniqueDBBuilder;
 
 public class RangeTableBuilder extends Buildable {
 
-    NodeBuilder keyTable;
     NodeBuilder nodeTable;
+    GrowableIntArray keyTempTable;
     
     public RangeTableBuilder orderedAdd(int key, Buildable node) {
     	
-        keyTable.add(key);
+        keyTempTable.add(key);
         nodeTable.add(node);
         
         return this;
     }
     
-    private RangeTableBuilder(UniqueDBBuilder db) {
+    public RangeTableBuilder(UniqueDBBuilder db) {
     	
         super(db);
         
-        keyTable = new NodeBuilder(db);
-        nodeTable = new NodeBuilder(db).setStoreSize(false);
-    }
-    
-    static RangeTableBuilder newLookupTable(UniqueDBBuilder db) {
-        return new RangeTableBuilder(db);
+        keyTempTable = new GrowableIntArray();
+        nodeTable = new NodeBuilder(db);
     }
     
     @Override
     public NodeBuilder build() {
+        
+        // We work on a copy because the build() operation 
+        // should not mutate the current object
+    	NodeBuilder table  = nodeTable.clone();
     	
-        return  new NodeBuilder(getDB()).setStoreSize(false).add(keyTable).add(nodeTable);
+    	for(int i = 0 ; i < keyTempTable.size(); i++) {
+    	    table.add(keyTempTable.get(i));
+    	}
+        
+        return  table;
     }
     
 }

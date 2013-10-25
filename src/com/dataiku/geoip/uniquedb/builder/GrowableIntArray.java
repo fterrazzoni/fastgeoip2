@@ -3,7 +3,7 @@ package com.dataiku.geoip.uniquedb.builder;
 import java.util.Arrays;
 
 // Less overhead compared to ArrayList
-class GrowableIntArray {
+public class GrowableIntArray {
 
 	int data[] = new int[4];
 	int size = 0;

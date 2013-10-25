@@ -10,7 +10,7 @@ import java.util.Random;
 import com.dataiku.geoip.fastgeo.FastGeoIP2;
 import com.dataiku.geoip.fastgeo.FastGeoIP2.Result;
 import com.dataiku.geoip.fastgeo.FastGeoIP2.Result.Subdivision;
-import com.dataiku.geoip.fastgeo.IPAddress;
+import com.dataiku.geoip.fastgeo.IPv6Address;
 import com.dataiku.geoip.uniquedb.InvalidDatabaseException;
 import com.dataiku.geoip.fastgeo.builder.FastGeoIP2Builder.Listener;
 import com.dataiku.geoip.mmdb.Reader;
@@ -22,12 +22,12 @@ public class Main {
 	// 2nd argument : path to the output FastGeoIP2 DB
 	public static void main(String[] args) throws IOException, InvalidDatabaseException {
 
-		convert(args[0], args[1]);
+		//convert(args[0], args[1]);
 		bench(args[0], args[1]);
 		
 		//System.out.println(new IPAddress("2001:0db8:0:0:0000:ff00:0042:8329"));
 		
-	}
+	} 
 
 	public static void convert(String mmdbInputFilename, String fgdbOutputFilename) throws IOException {
 
@@ -102,10 +102,10 @@ public class Main {
 
 			for (String addr : addressesString) {
 
-				Result res = fgdb.find(new IPAddress(addr));
+				Result res = fgdb.find(new IPv6Address(addr));
 
 				if (res != null) {
-
+				    
 					hashFGDB = 31 * hashFGDB + res.getLatitude().hashCode();
 					hashFGDB = 31 * hashFGDB + res.getLongitude().hashCode();
 					hashFGDB = 31 * hashFGDB + res.getTimezone().hashCode();
@@ -126,11 +126,10 @@ public class Main {
 			}
 			 
 			long T2 = System.currentTimeMillis();
-			
+			    
 			for (InetAddress addr : addressesInet) {
 				
 				JsonNode n = mmdb.get(addr);
-				
 				
 				if (n != null) {
 				    

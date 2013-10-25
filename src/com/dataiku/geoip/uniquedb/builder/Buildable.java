@@ -3,13 +3,13 @@ package com.dataiku.geoip.uniquedb.builder;
 
 public abstract class Buildable {
     
-    private UniqueDBBuilder db;
+    private UniqueDBBuilder database;
     
-    protected Buildable(UniqueDBBuilder db) {
-        this.db = db;
+    protected Buildable(UniqueDBBuilder database) {
+        this.database = database;
     }
-    protected UniqueDBBuilder getDB() {
-        return db;
+    protected UniqueDBBuilder getDatabase() {
+        return database;
     }
     
     protected abstract NodeBuilder build();

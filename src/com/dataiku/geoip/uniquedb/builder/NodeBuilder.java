@@ -3,29 +3,33 @@ package com.dataiku.geoip.uniquedb.builder;
 
 public class NodeBuilder extends Buildable {
     
-    final protected GrowableIntArray storage = new GrowableIntArray();
+    protected GrowableIntArray storage = new GrowableIntArray();
 	private boolean deduplicate=true;
 	private boolean storeSize=true;
     
     public NodeBuilder add(NodeBuilder array) {
         
+        if(array.getDatabase() != getDatabase()) {
+            throw new IllegalArgumentException("Cannot add a node from another UniqueDBBuilder");
+        }
+        
         Integer index = null;
         
         if(deduplicate) {
-        	index = getDB().map.get(array.storage);
+        	index = getDatabase().map.get(array.storage);
         }
         
         if (index == null) {
             if(array.storeSize) {
-                getDB().meta.add(array.storage.size());
+                getDatabase().meta.add(array.storage.size());
             }
-            index = getDB().meta.size();
+            index = getDatabase().meta.size();
             for(int i = 0 ; i < array.storage.size() ;i++) {
-                getDB().meta.add(array.storage.get(i));
+                getDatabase().meta.add(array.storage.get(i));
             }
             
             if(deduplicate) {
-            	getDB().map.put(array.storage.clone(),index);
+            	getDatabase().map.put(array.storage.clone(),index);
             }
         }
         storage.add(index);
@@ -45,6 +49,9 @@ public class NodeBuilder extends Buildable {
     
     public NodeBuilder add(Buildable b) {
         if(b!=null) {
+            if(b.getDatabase() != getDatabase()) {
+                throw new IllegalArgumentException("Cannot add a node from another UniqueDBBuilder");
+            }
             add(b.build());
         } else {
             storage.add(-1);
@@ -61,13 +68,13 @@ public class NodeBuilder extends Buildable {
 		if (string == null) {
 			storage.add(-1);
 		} else {
-			Integer index = getDB().map.get(string);
+			Integer index = getDatabase().map.get(string);
 			if (index == null) {
-				index = getDB().meta.size();
-				getDB().meta.add(getDB().data.length());
-				getDB().data.append(string);
-				getDB().meta.add(getDB().data.length());
-				getDB().map.put(string, index);
+				index = getDatabase().meta.size();
+				getDatabase().meta.add(getDatabase().data.length());
+				getDatabase().data.append(string);
+				getDatabase().meta.add(getDatabase().data.length());
+				getDatabase().map.put(string, index);
 			}
 			
 			storage.add(index);
@@ -89,6 +96,19 @@ public class NodeBuilder extends Buildable {
     @Override
     protected NodeBuilder build() {
         return this;
+    }
+
+    
+    @Override
+    public NodeBuilder clone()  {
+        return new NodeBuilder(getDatabase(),storage.clone(),storeSize,deduplicate);
+    }
+    
+    private NodeBuilder(UniqueDBBuilder db, GrowableIntArray storage, boolean storeSize, boolean deduplicate) {
+        super(db);
+        this.storage = storage;
+        this.storeSize = storeSize;
+        this.deduplicate = deduplicate;
     }
   
 }

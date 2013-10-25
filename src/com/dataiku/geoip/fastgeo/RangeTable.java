@@ -2,46 +2,47 @@ package com.dataiku.geoip.fastgeo;
 
 import com.dataiku.geoip.uniquedb.Node;
 
-// 
+
 public class RangeTable {
 
+    // Load a Node as a RangeTable
+    // For convenience, 'node' can be null (in this case, lookup() will always return null)
+    public RangeTable(Node node) {
+        this.mainTable = node;
+    }
+    
+    // Find the 'key' in the table using a simple binary search 
 	public Node lookup(int key) {
 
+	    if(mainTable == null || mainTable.size()==0) {
+	        return null;
+	    }
+	    
+	    int tableSize = mainTable.size()/2;
 		int minIdx = 0;
-		int maxIdx = keyTable.size() - 1;
+		int maxIdx = tableSize-1;
 		
-		if (maxIdx < minIdx) {
-			return null;
-		}
-
 		while (minIdx <= maxIdx) {
-
+		    
 			int midIdx = (minIdx + maxIdx) >>> 1;
-			int currentIP = keyTable.getInteger(midIdx);
-
-			if (currentIP < key) {
+			int currentKey = mainTable.getInteger(tableSize+midIdx);
+			
+			if (currentKey < key) {
 				minIdx = midIdx + 1;
-			} else if (currentIP > key) {
+			} else if (currentKey > key) {
 				maxIdx = midIdx - 1;
 			} else {
-				return nodeTable.getNode(midIdx);
+				return mainTable.getNode(midIdx);
 			}
 		}
-		if(minIdx>1) {
-			return nodeTable.getNode(minIdx - 1);
+		
+		if(minIdx>0) {
+			return mainTable.getNode(minIdx-1);
 		} else {
 			return null;
 		}
 	}
 
-	private final Node keyTable;
-	private final Node nodeTable;
-
-	public RangeTable(Node n) {
-
-		keyTable = n.getNode(0);
-		nodeTable = n.getNode(1);
-
-	}
+	private final Node mainTable;
 
 }

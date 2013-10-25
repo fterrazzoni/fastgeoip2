@@ -1,8 +1,9 @@
 package com.dataiku.geoip.fastgeo;
 
-public class IPAddress {
+// Store an IPv6 address 
+public class IPv6Address {
 
-	// Parse an IPv4 and store it into an integer
+	// Parse an IPv4 and store it as an IPv4-mapped IPv6
 	static private int[] parseIPv4(String addr) {
 
 		if (addr == null || addr.isEmpty()) {
@@ -54,13 +55,13 @@ public class IPAddress {
 		int output[] = new int[4];
 		output[0] = Integer.MIN_VALUE;
 		output[1] = Integer.MIN_VALUE;
-		output[2] = Integer.MIN_VALUE;
+		output[2] = 0x0000FFFF + Integer.MIN_VALUE;
 		output[3] = ip;
 
 		return output;
 	}
 
-	// TODO : safety checks
+	// Parse an IPv6 and store it into an int[4]
 	static private int[] parseIPv6(String addr) {
 
 		int blocks[] = new int[8];
@@ -151,7 +152,48 @@ public class IPAddress {
 		return output;
 
 	}
+	
+	public int[] parseIP(String ipStr) {
+	    
+	    int lastColonPosition = ipStr.lastIndexOf(":");
+	    
+	    // IPv6 format
+	    if (lastColonPosition!=-1) {
+	        
+	        // IPv4-mapped IPv6 "mixed notation"
+	        if(ipStr.indexOf(".")!=-1) {
+	            
+	            // Check the IPv6 part
+	            int storage[] = parseIPv6(ipStr.substring(0,lastColonPosition)+":0");
+	           
+	            if(storage != null 
+	                    && storage[0] == Integer.MIN_VALUE 
+	                    && storage[1] == Integer.MIN_VALUE
+	                    && (storage[2] == Integer.MIN_VALUE + 0x0000FFFF 
+	                        || storage[2] == Integer.MIN_VALUE)
+	                    && storage[3] == Integer.MIN_VALUE) {
+	                
+	                // IPv6 part is valid, parse the IPv4 part
+	                return parseIPv4(ipStr.substring(lastColonPosition+1));
+	                
+	            } else {
+	                // Invalid IPv6 part
+	                return null;
+	            }
+	        } 
+	        // Standard IPv6 notation
+	        else {
+	            return parseIPv6(ipStr);
+	        }
+	        
+        } else {
+            return parseIPv4(ipStr);
+        }
 
+	    
+	}
+	
+	// Useful for debugging
 	@Override
 	public String toString() {
 		String out = "";
@@ -166,24 +208,17 @@ public class IPAddress {
 				lStr = "0" + lStr;
 			}
 			out += hStr + ":" + lStr + (i != 3 ? ":" : "");
-
 		}
 		return out;
 	}
 
-	public int[] getIntRepresentation() {
-		return storage;
-	}
+	
 
 	private int storage[];
 
-	public IPAddress(String ipStr) throws IllegalArgumentException {
+	public IPv6Address(String ipStr) throws IllegalArgumentException {
 
-		if (ipStr.contains(":")) {
-			storage = parseIPv6(ipStr);
-		} else {
-			storage = parseIPv4(ipStr);
-		}
+		storage = parseIP(ipStr);
 
 		if (storage == null) {
 			throw new IllegalArgumentException("Unable to parse IP address \"" + ipStr+"\"");
@@ -191,11 +226,24 @@ public class IPAddress {
 
 	}
 
-	public IPAddress(int ip[]) throws IllegalArgumentException {
-		storage = ip;
-		if (storage.length != 4) {
-			throw new IllegalArgumentException("'ip' must be an integer array of size 4");
+	public IPv6Address(int ip[]) throws IllegalArgumentException {
+		if (ip == null || ip.length != 4) {
+			throw new IllegalArgumentException("'ip' must be encoded as int[4]");
 		}
+		storage = ip;
+	}
+	
+	// Return the internal int[4] storing the IP
+	public int[] internalRepresentation() {
+        return storage;
+    }
+	
+	// It is an IPv4-mapped IPv6 address ?
+	public boolean isIPv4() {
+	    return storage[0] == Integer.MIN_VALUE 
+	            && storage[1] == Integer.MIN_VALUE 
+	            && storage[2] == Integer.MIN_VALUE+0x0000FFFF;
+	    
 	}
 
 }

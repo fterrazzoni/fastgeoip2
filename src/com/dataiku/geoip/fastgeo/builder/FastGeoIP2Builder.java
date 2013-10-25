@@ -1,4 +1,4 @@
-package com.dataiku.geoip.fastgeo.builder;
+    package com.dataiku.geoip.fastgeo.builder;
 
 import java.io.File;
 import java.io.IOException;
@@ -154,7 +154,7 @@ public class FastGeoIP2Builder {
             	
                 lastIPv6 = words;
                 for(int i = 0 ; i < 4 ; i++) {
-                    ipv6Tables[i] = RangeTableBuilder.newLookupTable(db);
+                    ipv6Tables[i] = new RangeTableBuilder(db);
                 }
             }
             
@@ -164,7 +164,7 @@ public class FastGeoIP2Builder {
                     for(int j = 3; j > i; j--) {
                     	
                         ipv6Tables[j-1].orderedAdd(lastIPv6[j-1],ipv6Tables[j]);
-                        ipv6Tables[j] = RangeTableBuilder.newLookupTable(db);
+                        ipv6Tables[j] = new RangeTableBuilder(db);
                     }
                     
                     break;

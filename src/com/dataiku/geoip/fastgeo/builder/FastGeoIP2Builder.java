@@ -6,8 +6,8 @@ import java.net.InetAddress;
 import java.util.List;
 
 import com.dataiku.geoip.fastgeo.FastGeoIP2;
-import com.dataiku.geoip.fastgeo.InvalidFastGeoIP2DatabaseException;
 import com.dataiku.geoip.mmdb.Reader;
+import com.dataiku.geoip.uniquedb.InvalidDatabaseException;
 import com.dataiku.geoip.uniquedb.UniqueDB;
 import com.dataiku.geoip.uniquedb.builder.NodeBuilder;
 import com.dataiku.geoip.uniquedb.builder.UniqueDBBuilder;
@@ -65,7 +65,7 @@ public class FastGeoIP2Builder {
             UniqueDB udb = db.constructDatabase();
             return new FastGeoIP2(udb);
 
-        } catch (InvalidFastGeoIP2DatabaseException e) {
+        } catch (InvalidDatabaseException e) {
             throw new RuntimeException("This is a bug: the FastGeoIP2Builder generated an invalid database",e);
         }
     }

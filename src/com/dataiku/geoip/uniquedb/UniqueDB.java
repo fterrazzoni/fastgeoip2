@@ -41,7 +41,7 @@ public final class UniqueDB {
 	}
 
 	// Write the UniqueDB to a DataOutputStream
-	static public UniqueDB loadFromStream(DataInputStream dis) throws InvalidUniqueDBException {
+	static public UniqueDB loadFromStream(DataInputStream dis) throws InvalidDatabaseException {
 
 		try {
 
@@ -49,11 +49,11 @@ public final class UniqueDB {
 
 			// reader & check headers
 			if (dis.readInt() != UDB_MARKER) {
-				throw new InvalidUniqueDBException("Unknown file format");
+				throw new InvalidDatabaseException("Unknown file format");
 			}
 
 			if (dis.readInt() != VERSION_ID) {
-				throw new InvalidUniqueDBException("Incompatible UniqueDB version");
+				throw new InvalidDatabaseException("Incompatible UniqueDB version");
 			}
 
 			// read strings
@@ -75,14 +75,14 @@ public final class UniqueDB {
 
 			// verify checksum
 			if (checksum.getValue() != dis.readLong()) {
-				throw new InvalidUniqueDBException("Cannot load UniqueDB (invalid checksum)");
+				throw new InvalidDatabaseException("Cannot load UniqueDB (invalid checksum)");
 			}
 
 			return new UniqueDB(data, meta);
 
 		} catch (IOException e) {
 			
-			throw new InvalidUniqueDBException("Cannot load UniqueDB (I/O error)", e);
+			throw new InvalidDatabaseException("Cannot load UniqueDB (I/O error)", e);
 		}
 
 	}

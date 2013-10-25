@@ -15,7 +15,7 @@ import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.dataiku.geoip.uniquedb.InvalidUniqueDBException;
+import com.dataiku.geoip.uniquedb.InvalidDatabaseException;
 import com.dataiku.geoip.uniquedb.Node;
 import com.dataiku.geoip.uniquedb.UniqueDB;
 
@@ -33,7 +33,7 @@ public class FastGeoIP2 {
 
     
 	// Instantiate a new FastGeoIP2 from a file
-    public FastGeoIP2(File file) throws InvalidFastGeoIP2DatabaseException {
+    public FastGeoIP2(File file) throws InvalidDatabaseException {
 
         try (
 
@@ -46,11 +46,11 @@ public class FastGeoIP2 {
 
         } catch (IOException e) {
 
-            throw new InvalidFastGeoIP2DatabaseException("Unable to open FastGeoIP2 database (I/O error)", e);
+            throw new InvalidDatabaseException("Unable to open FastGeoIP2 database (I/O error)", e);
 
-        } catch (InvalidUniqueDBException e) {
+        } catch (InvalidDatabaseException e) {
 
-            throw new InvalidFastGeoIP2DatabaseException("Invalid FastGeoIP2 database (corrupted UniqueDB)", e);
+            throw new InvalidDatabaseException("Invalid FastGeoIP2 database (corrupted UniqueDB)", e);
 
         }
 
@@ -162,29 +162,12 @@ public class FastGeoIP2 {
     }*/
 
     // Construct a FastGeoIP2 using an already loaded UniqueDB
-    public FastGeoIP2(UniqueDB db) throws InvalidFastGeoIP2DatabaseException {
+    public FastGeoIP2(UniqueDB db) throws InvalidDatabaseException {
         initialize(db);
     }
     
     public Result find(IPAddress addr) {
     	
-		/*IntBuffer intBuf = ByteBuffer
-				.wrap(addr.getAddress())
-				.order(ByteOrder.BIG_ENDIAN)
-				.asIntBuffer();
-		
-		int[] words = new int[intBuf.remaining()];
-		intBuf.get(words);
-		
-		for(int i = 0 ; i < words.length; i++) {
-			words[i] += Integer.MIN_VALUE;
-		}
-    	
-    	if(words.length!=4)
-    		return null;*/
-        
-        
-
     	Node node = db.root().getNode(2);
     	int ip[] = addr.getIntRepresentation();
     	for(int i = 0 ; i < 4 && node != null; i++) {
@@ -199,11 +182,11 @@ public class FastGeoIP2 {
     	
     }
     
-    private void initialize(UniqueDB db) throws InvalidFastGeoIP2DatabaseException {
+    private void initialize(UniqueDB db) throws InvalidDatabaseException {
         this.db = db;
         
         if(db.root().size() != 3 || db.root().getInteger(0) != FGDB_MARKER || db.root().getInteger(1) != VERSION_ID) {
-        	throw new InvalidFastGeoIP2DatabaseException("Cannot load FastGeoIP2 database (invalid database or incompatible version)");
+        	throw new InvalidDatabaseException("Cannot load FastGeoIP2 database (invalid database or incompatible version)");
         }
     }
 

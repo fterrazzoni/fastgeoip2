@@ -28,12 +28,13 @@ public class FastGeoIP2 {
 
     // Instantiate a new FastGeoIP2 from a file
     public FastGeoIP2(File file) throws InvalidDatabaseException {
-
-        try (
-
-        FileInputStream fis = new FileInputStream(file);
-                BufferedInputStream bis = new BufferedInputStream(fis);
-                DataInputStream dis = new DataInputStream(bis)) {
+        DataInputStream dis = null;
+        try {
+            
+            FileInputStream fis = new FileInputStream(file);
+            
+            BufferedInputStream bis = new BufferedInputStream(fis);
+            dis = new DataInputStream(bis);
 
             initialize(UniqueDB.loadFromStream(dis));
 
@@ -45,6 +46,16 @@ public class FastGeoIP2 {
 
             throw new InvalidDatabaseException("Invalid FastGeoIP2 database (corrupted UniqueDB)", e);
 
+        } finally {
+            
+            if(dis != null ) {
+                try {
+                    dis.close();
+                } catch (IOException e) {
+                    // i really don't care...
+                }
+            }
+            
         }
 
     }

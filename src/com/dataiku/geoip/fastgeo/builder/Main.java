@@ -22,7 +22,7 @@ public class Main {
 	// 2nd argument : path to the output FastGeoIP2 DB
 	public static void main(String[] args) throws IOException, InvalidDatabaseException {
 
-		//convert(args[0], args[1]);
+		convert(args[0], args[1]);
 		bench(args[0], args[1]);
 		
 	} 
@@ -73,15 +73,33 @@ public class Main {
 		// Add some "pathological" addresses to make sure they work as expected
 		addressesInet.add(InetAddress.getByName("0.0.0.0"));
 		addressesInet.add(InetAddress.getByName("255.255.255.255"));
+		addressesInet.add(InetAddress.getByName("::"));
+        
 
 		// Generate random IP addresses
-		int nbRandomIPs = 1000;
+		int nbRandomIPs = 100000;
+		
 		Random rd = new Random(123);
 		for (int k = 0; k < nbRandomIPs; k++) {
 			String ip = rd.nextInt(256) + "." + rd.nextInt(256) + "." + rd.nextInt(256) + "."
 					+ rd.nextInt(256);
 			addressesInet.add(InetAddress.getByName(ip));
 		}
+		
+		for (int k = 0; k < nbRandomIPs; k++) {
+		    
+            String ip = Integer.toString(rd.nextInt(65536), 16)
+                    + ":" +Integer.toString(rd.nextInt(65536), 16)
+                    + ":" +Integer.toString(rd.nextInt(65536), 16)
+                    + ":" +Integer.toString(rd.nextInt(65536), 16)
+                    + ":" +Integer.toString(rd.nextInt(65536), 16)
+                    + ":" +Integer.toString(rd.nextInt(65536), 16)
+                    + ":" +Integer.toString(rd.nextInt(65536), 16)
+                    + ":" +Integer.toString(rd.nextInt(65536), 16);
+                    
+            addressesInet.add(InetAddress.getByName(ip));
+        }
+		
 
 		List<String> addressesString = new ArrayList<String>();
 
@@ -123,7 +141,7 @@ public class Main {
 				}
 
 			}
-			 
+			
 			long T2 = System.currentTimeMillis();
 			
 			for (InetAddress addr : addressesInet) {

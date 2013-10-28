@@ -1,6 +1,5 @@
 package com.dataiku.geoip.fastgeo.builder;
 
-import java.awt.font.NumericShaper.Range;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -56,10 +55,6 @@ public class FastGeoIP2Builder {
             db.root().add(FastGeoIP2.FGDB_MARKER);
             db.root().add(FastGeoIP2.VERSION_ID);
             
-            //System.out.println("ipv4="+ipv4Table.size());
-            //System.out.println("ipv6="+ipv6Table.size());
-            
-            
             db.root().add(ipv4Table);
             db.root().add(ipv6Table);
 
@@ -70,19 +65,7 @@ public class FastGeoIP2Builder {
             throw new RuntimeException("This is a bug: the FastGeoIP2Builder generated an invalid database", e);
         }
     }
-
-    static public int[] inet2ints(InetAddress addr) {
-        byte[] bytes = addr.getAddress();
-        int[] out = new int[bytes.length / 4];
-
-        for (int i = 0; i < bytes.length; i += 4) {
-
-            out[i / 4] = (int) ((((bytes[i] & 0xFFL) << 24) | ((bytes[i + 1] & 0xFFL) << 16) | ((bytes[i + 2] & 0xFFL) << 8) | (bytes[i + 3] & 0xFFL)) + Integer.MIN_VALUE);
-        }
-
-        return out;
-    }
-
+    
     // Insert an IP record using the data contained in a JsonNode
     private void insert(InetAddress address, JsonNode node) {
 
@@ -108,20 +91,20 @@ public class FastGeoIP2Builder {
                 String name = subdivisions.get(i).path("names").path("en").asText();
                 String code = subdivisions.get(i).path("iso_code").asText();
 
-                regions.add(new NodeBuilder(db).setStoreSize(false).add(name).add(code));
+                regions.add(new NodeBuilder(db).withSize(false).add(name).add(code));
             }
 
             // If you modify this tree, don't forget to update the getters in
             // FastGeoIP2 !
             ipDetails = new NodeBuilder(db)
-                    .setStoreSize(false)
+                    .withSize(false)
 
                     .add(latitude)
                     .add(longitude)
                     .add(postalcode)
                     .add(city)
-                    .add(new NodeBuilder(db).setStoreSize(false).add(regions).add(country).add(countrycode).add(timezone)
-                            .add(new NodeBuilder(db).setStoreSize(false).add(continent).add(continentcode)));
+                    .add(new NodeBuilder(db).withSize(false).add(regions).add(country).add(countrycode).add(timezone)
+                            .add(new NodeBuilder(db).withSize(false).add(continent).add(continentcode)));
 
         }
 

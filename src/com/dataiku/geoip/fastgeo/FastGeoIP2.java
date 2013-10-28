@@ -169,9 +169,6 @@ public class FastGeoIP2 {
         ipv4Table = new RangeTable(db.root().getNode(2));
         ipv6Table = new RangeTable(db.root().getNode(3));
         
-        
-        
-        
     }
 
     private RangeTable ipv6Table;

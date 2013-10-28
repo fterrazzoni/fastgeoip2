@@ -1,9 +1,8 @@
 package com.dataiku.geoip.fastgeo.builder;
 
 
-import com.dataiku.geoip.uniquedb.builder.GrowableIntArray;
-import com.dataiku.geoip.uniquedb.builder.NodeBuilder;
 import com.dataiku.geoip.uniquedb.builder.Buildable;
+import com.dataiku.geoip.uniquedb.builder.NodeBuilder;
 import com.dataiku.geoip.uniquedb.builder.UniqueDBBuilder;
 
 public class RangeTableBuilder extends Buildable {

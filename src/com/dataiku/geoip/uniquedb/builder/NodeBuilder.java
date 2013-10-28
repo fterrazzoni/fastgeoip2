@@ -37,12 +37,12 @@ public class NodeBuilder extends Buildable {
         return this;
     }
     
-	public NodeBuilder setStoreSize(boolean v) {
+	public NodeBuilder withSize(boolean v) {
 		storeSize=v;
 		return this;
 	}
 	
-	public NodeBuilder setDeduplication(boolean v) {
+	public NodeBuilder withDeduplication(boolean v) {
 		deduplicate=v;
 		return this;
 	}

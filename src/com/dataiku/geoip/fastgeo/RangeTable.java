@@ -1,10 +1,5 @@
 package com.dataiku.geoip.fastgeo;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map.Entry;
-import java.util.Set;
-
 import com.dataiku.geoip.uniquedb.Node;
 
 public class RangeTable {
@@ -16,43 +11,6 @@ public class RangeTable {
         this.size = node.getInteger(0);
         this.keyTable = node.getNode(1);
         this.nodeTable = node.getNode(2);
-/*
-        if (size == 1 && false) {
-
-            HashMap<Integer, Integer> s = new HashMap<Integer, Integer>();
-            for (int i = 0; i < nodeTable.size(); i++) {
-                int k = nodeTable.getInteger(i);
-                int o = 0;
-                if (s.get(k) != null) {
-                    o = s.get(k);
-                }
-                s.put(k, o + 1);
-
-            }
-
-            Integer best = 0;
-            Integer cnt = 0;
-            for (Entry<Integer, Integer> item : s.entrySet()) {
-                if (item.getValue() > cnt) {
-                    cnt = item.getValue();
-                    best = item.getKey();
-                }
-            }
-
-            for (int i = 0; i < nodeTable.size(); i++) {
-                if (nodeTable.getInteger(i) == best) {
-                    int k = keyTable.getInteger(i);
-                    IPv6Address ip = new IPv6Address(new int[] {Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE, k });
-                    Node n = nodeTable.getNode(i);
-                    if (n != null)
-                        System.out.println(ip + " " + n.getString(0)+ " " +n.getString(1));
-                }
-            }
-
-            System.out.println();
-
-        }*/
-
     }
 
     private int compare(int a[], int b[]) {
@@ -64,7 +22,6 @@ public class RangeTable {
                 return 1;
             }
         }
-
         return 0;
 
     }

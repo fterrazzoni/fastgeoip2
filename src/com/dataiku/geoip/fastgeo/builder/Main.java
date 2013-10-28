@@ -21,7 +21,7 @@ public class Main {
 	// 1st argument : path to the GeoLite2 DB
 	// 2nd argument : path to the output FastGeoIP2 DB
 	public static void main(String[] args) throws IOException, InvalidDatabaseException {
-
+	    
 		convert(args[0], args[1]);
 		bench(args[0], args[1]);
 		 

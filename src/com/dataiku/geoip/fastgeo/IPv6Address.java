@@ -6,7 +6,7 @@ public class IPv6Address {
     // Parse an IPv4 and store it as an IPv4-mapped IPv6
     static private int[] parseIPv4(String addr) {
 
-        if (addr == null || addr.isEmpty()) {
+        if (addr == null || addr.length()<7 || addr.length()>15) {
             return null;
         }
 
@@ -22,6 +22,8 @@ public class IPv6Address {
             if (c >= '0' && c <= '9') {
                 blockVal = blockVal * 10 + c - '0';
                 blockSize++;
+                if(blockSize>3)
+                    return null;
             }
 
             if (c == '.' || i == addr.length() - 1) {
@@ -64,6 +66,11 @@ public class IPv6Address {
     // Parse an IPv6 and store it into an int[4]
     static private int[] parseIPv6(String addr) {
 
+        if(addr == null || addr.length()<2 || addr.length()>39)
+        {
+            return null;
+        }
+        
         int blocks[] = new int[8];
         int blockNum = 0;
         int blockVal = 0;
@@ -155,7 +162,7 @@ public class IPv6Address {
     
     static public int[] parseIP(String ipStr) {
         
-        if(ipStr == null)
+        if(ipStr == null || ipStr.length()>45 || ipStr.length()<2)
         {
             return null;
         }

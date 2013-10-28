@@ -3,17 +3,15 @@ package com.dataiku.geoip.fastgeo.builder;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
 import com.dataiku.geoip.fastgeo.FastGeoIP2;
 import com.dataiku.geoip.fastgeo.FastGeoIP2.Result;
 import com.dataiku.geoip.fastgeo.FastGeoIP2.Result.Subdivision;
-import com.dataiku.geoip.fastgeo.IPv6Address;
-import com.dataiku.geoip.uniquedb.InvalidDatabaseException;
 import com.dataiku.geoip.fastgeo.builder.FastGeoIP2Builder.Listener;
 import com.dataiku.geoip.mmdb.Reader;
+import com.dataiku.geoip.uniquedb.InvalidDatabaseException;
 import com.fasterxml.jackson.databind.JsonNode;
 
 public class Main {
@@ -101,12 +99,6 @@ public class Main {
         }
 		
 
-		List<String> addressesString = new ArrayList<String>();
-
-		for (InetAddress addr : addressesInet) {
-			addressesString.add(addr.getHostAddress());
-		}
-
 		System.out.println("Benchmark size : " + addressesInet.size() + " IPs");
 
 		int nbPasses = 10;
@@ -117,9 +109,9 @@ public class Main {
 
 			long T1 = System.currentTimeMillis();
 
-			for (String addr : addressesString) {
+			for (InetAddress addr : addressesInet) {
 
-				Result res = fgdb.find(new IPv6Address(addr));
+				Result res = fgdb.find(addr);
 
 				if (res != null) {
 				    

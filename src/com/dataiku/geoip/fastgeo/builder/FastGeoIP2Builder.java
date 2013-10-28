@@ -6,7 +6,6 @@ import java.net.InetAddress;
 import java.util.List;
 
 import com.dataiku.geoip.fastgeo.FastGeoIP2;
-import com.dataiku.geoip.fastgeo.IPv6Address;
 import com.dataiku.geoip.mmdb.Reader;
 import com.dataiku.geoip.uniquedb.InvalidDatabaseException;
 import com.dataiku.geoip.uniquedb.UniqueDB;
@@ -108,16 +107,22 @@ public class FastGeoIP2Builder {
 
         }
 
-        IPv6Address ip = new IPv6Address(address.getHostAddress());
-        int representation[] = ip.internalRepresentation();
 
-        if (ip.isIPv4()) {
-            ipv4Table.orderedAdd(new int[] { representation[3] }, ipDetails);
+        int ip[] = FastGeoIP2.inetToInteger(address);
+
+        if (ip[0] == Integer.MIN_VALUE 
+				&& ip[1] == Integer.MIN_VALUE 
+				&& ip[2] == Integer.MIN_VALUE+0x0000FFFF) {
+            ipv4Table.orderedAdd(new int[] { ip[3] }, ipDetails);
             
+        } else if (ip[0] == Integer.MIN_VALUE 
+				&& ip[1] == Integer.MIN_VALUE 
+				&& ip[2] == Integer.MIN_VALUE) {
+        	// explicitely ignored
         }
-        else if(!ip.isIPv4Deprecated())
+        else
         {
-            ipv6Table.orderedAdd(new int[] { representation[0], representation[1] }, ipDetails);
+            ipv6Table.orderedAdd(new int[] { ip[0], ip[1] }, ipDetails);
             
         }
 
